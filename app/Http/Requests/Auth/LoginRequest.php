@@ -6,9 +6,11 @@ use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
 
 class LoginRequest extends FormRequest
 {
@@ -42,14 +44,32 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+        $email = trim($this->input('email'));
+        $password = trim($this->input('password'));
 
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
+
+        if (! $user) {
+            RateLimiter::hit($this->throttleKey());
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'email' => 'El email no existe.',
             ]);
         }
 
+        if (! Hash::check($password, $user->password)) {
+            RateLimiter::hit($this->throttleKey());
+            throw ValidationException::withMessages([
+                'password' => 'La contrasena es incorrecta.',
+            ]);
+        }
+
+        if (! $user->estado) {
+            throw ValidationException::withMessages([
+                'email' => 'La cuenta está desactivada.',
+            ]);
+        }
+
+        Auth::login($user, $this->boolean('remember'));
         RateLimiter::clear($this->throttleKey());
     }
 
@@ -81,6 +101,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->input('email')) . '|' . $this->ip());
     }
 }

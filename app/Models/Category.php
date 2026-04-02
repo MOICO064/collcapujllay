@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
 class Category extends Model
 {
     use HasFactory, LogsActivity;
+
 
     protected $fillable = [
         'name',
@@ -17,6 +18,16 @@ class Category extends Model
         'description',
         'parent_id',
     ];
+
+    
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'slug', 'description', 'parent_id'])
+            ->logOnlyDirty()
+            ->useLogName('category')
+            ->setCauser(auth()->user());
+    }
 
     public function parent()
     {
@@ -31,14 +42,5 @@ class Category extends Model
     public function items()
     {
         return $this->hasMany(Item::class);
-    }
-
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->useLogName('categories')
-            ->logOnly(['name', 'slug', 'parent_id', 'description'])
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
     }
 }

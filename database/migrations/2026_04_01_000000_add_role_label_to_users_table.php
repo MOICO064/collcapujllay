@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('role_label')->nullable()->after('email');
+            $table->boolean('estado')->default(true)->after('role_label');
         });
     }
 
@@ -17,6 +18,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('role_label');
+            $table->dropColumn('estado');
         });
     }
 };

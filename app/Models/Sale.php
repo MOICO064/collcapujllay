@@ -4,12 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
 class Sale extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory;
 
     protected $fillable = [
         'sale_date',
@@ -26,12 +24,4 @@ class Sale extends Model
         return $this->hasMany(SaleItem::class);
     }
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->useLogName('sales')
-            ->logOnly(['sale_date', 'total'])
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
-    }
 }

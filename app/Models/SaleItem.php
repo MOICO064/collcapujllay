@@ -4,12 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
 class SaleItem extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory;
 
     protected $fillable = [
         'sale_id',
@@ -34,12 +32,4 @@ class SaleItem extends Model
         return $this->belongsTo(Item::class);
     }
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->useLogName('sale_items')
-            ->logOnly(['sale_id', 'item_id', 'quantity', 'unit_price', 'total'])
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
-    }
 }
