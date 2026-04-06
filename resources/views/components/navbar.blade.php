@@ -32,7 +32,9 @@
         <div class="flex items-center gap-3">
             <div class="flex flex-col text-xs text-emerald-600">
                 <span class="text-sm font-semibold tracking-[0.3em] uppercase">{{ Auth::user()->name ?? 'Usuario' }}</span>
-                <span class="text-[0.6rem] font-bold tracking-[0.5em] uppercase text-emerald-500">{{ Auth::user()->role_label ?? 'Rol' }}</span>
+                <span class="text-[0.6rem] font-bold tracking-[0.5em] uppercase text-emerald-500">
+                    {{ Auth::user()->roles->first()?->name ?? 'Sin rol' }}
+                </span>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white text-emerald-700 font-semibold">
                 {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}

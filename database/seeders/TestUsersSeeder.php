@@ -5,36 +5,42 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class TestUsersSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        User::factory()->create([
+        // 🔥 Crear roles (si no existen)
+        $adminRole = Role::firstOrCreate(['name' => 'Administrador']);
+        $opsRole = Role::firstOrCreate(['name' => 'Cajero']);
+        $securityRole = Role::firstOrCreate(['name' => 'Encargado']);
+
+        // 👤 Usuario Admin
+        $admin = User::factory()->create([
             'name' => 'Director Parque',
             'email' => 'admin@collcapujllay.test',
-            'role_label' => 'admin',
             'password' => 'Secret123!',
             'estado' => true,
         ]);
+        $admin->assignRole($adminRole);
 
-        User::factory()->create([
+        // 👤 Usuario Operaciones
+        $ops = User::factory()->create([
             'name' => 'Empleado Operaciones',
             'email' => 'ops@collcapujllay.test',
-            'role_label' => 'operations',
-            'password' =>'OpsAccess1!',
+            'password' => 'OpsAccess1!',
             'estado' => true,
         ]);
+        $ops->assignRole($opsRole);
 
-        User::factory()->create([
+        // 👤 Usuario Seguridad
+        $security = User::factory()->create([
             'name' => 'Vigilancia',
             'email' => 'security@collcapujllay.test',
-            'role_label' => 'security',
             'password' => 'Secure123!',
             'estado' => false,
         ]);
+        $security->assignRole($securityRole);
     }
 }

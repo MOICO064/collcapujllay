@@ -24,7 +24,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role_label',
         'estado',
     ];
 
@@ -52,8 +51,12 @@ class User extends Authenticatable
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName('auth')
-            ->logOnly(['name', 'email', 'role_label', 'estado'])
+            ->useLogName(
+                auth()->check()
+                    ? auth()->id() . ' - ' . auth()->user()->name
+                    : 'Sistema'
+            )
+            ->logOnly(['name', 'email', 'estado'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
