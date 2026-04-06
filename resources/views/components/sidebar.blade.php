@@ -19,8 +19,7 @@
             <span data-sidebar-label class="transition-all duration-200">Tablero</span>
         </a>
         <!-- Usuarios -->
-        <a href="{{ route('usuarios.index') }}"
-            class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+        <a href="{{ route('usuarios.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
     {{ request()->routeIs('usuarios.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
 
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
@@ -35,6 +34,52 @@
             </span>
 
             <span data-sidebar-label class="transition-all duration-200">Usuarios</span>
+        </a>
+        <!-- Roles -->
+        <a href="{{ route('roles.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+    {{ request()->routeIs('roles.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
+
+            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
+        {{ request()->routeIs('roles.*') ? 'text-emerald-700' : 'text-emerald-600 group-hover:bg-emerald-50' }}">
+
+                <!-- icon roles/seguridad -->
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M12 3l7 4v6c0 5-3.5 8-7 8s-7-3-7-8V7l7-4z" />
+                </svg>
+            </span>
+
+            <span data-sidebar-label class="transition-all duration-200">Roles</span>
+        </a>
+
+        <!-- Permisos -->
+        <a href="{{ route('permisos.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+    {{ request()->routeIs('permisos.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
+
+            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
+        {{ request()->routeIs('permisos.*') ? 'text-emerald-700' : 'text-emerald-600 group-hover:bg-emerald-50' }}">
+
+                <!-- icon permisos -->
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M5 12h14M12 5v14" />
+                </svg>
+            </span>
+
+            <span data-sidebar-label class="transition-all duration-200">Permisos</span>
+        </a>
+        <!-- Categorías -->
+        <a href="{{ route('categorias.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+    {{ request()->routeIs('categorias.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
+
+            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
+        {{ request()->routeIs('categorias.*') ? 'text-emerald-700' : 'text-emerald-600 group-hover:bg-emerald-50' }}">
+
+                <!-- icon categorías -->
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M4 6h16M4 12h16M4 18h16" /> <!-- ícono de lista / categorías -->
+                </svg>
+            </span>
+
+            <span data-sidebar-label class="transition-all duration-200">Categorías</span>
         </a>
         <!-- Operaciones -->
         <a href="#operaciones"

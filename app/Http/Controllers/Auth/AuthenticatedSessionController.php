@@ -33,7 +33,7 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        activity('auth')
+        activity('Auth')
             ->causedBy($user)
             ->withProperties([
                 'ip' => $request->ip(),

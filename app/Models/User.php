@@ -52,9 +52,7 @@ class User extends Authenticatable
     {
         return LogOptions::defaults()
             ->useLogName(
-                auth()->check()
-                    ? auth()->id() . ' - ' . auth()->user()->name
-                    : 'Sistema'
+                'Usuario'
             )
             ->logOnly(['name', 'email', 'estado'])
             ->logOnlyDirty()

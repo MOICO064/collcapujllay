@@ -1,3 +1,34 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.roles-permisos-submenu {
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.roles-permisos-submenu a {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#dashboard-sidebar.w-20 .roles-permisos-submenu {
+    display: none !important;
+}
+
+#dashboard-sidebar.w-20 .roles-permisos-toggle {
+    justify-content: center;
+}
+
+#dashboard-sidebar.w-20 .roles-permisos-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+}
+
+#dashboard-sidebar.w-20 .roles-permisos-icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
