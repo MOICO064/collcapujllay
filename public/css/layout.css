@@ -1,0 +1,21 @@
+html,
+body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Figtree', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+#sidebar-mobile-panel {
+    will-change: transform;
+}
+
+/*
+ * User menu dropdown initial hidden state.
+ */
+#user-menu-panel {
+    pointer-events: none;
+}
+
+main {
+    max-height: 100%;
+}

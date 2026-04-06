@@ -9,6 +9,7 @@
     <link rel="icon" href="{{ asset('img/logo.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet">
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -16,94 +17,44 @@
                 extend: {
                     colors: {
                         slate: {
-                            950: '#020b08',
+                            50: '#f5fcf9',
+                            100: '#eef8f4',
+                            200: '#d8ede4',
+                            300: '#b8e4cf',
+                            900: '#0b1c17',
                         },
-                        forest: '#0d3b2e',
-                        viridian: '#1dd6af',
-                        mint: '#75ffe7',
+                        mint: '#1dd6af',
+                        forest: '#0a3a2e',
+                        jade: '#1b8b74',
                     },
                 },
             },
         };
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    @stack('head')
-    <style>
-        body {
-            font-family: 'Figtree', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        }
 
-        #sidebar-mobile-panel {
-            will-change: transform;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ asset('css/layout.css') }}">
+    @stack('head')
 </head>
 
-<body class="min-h-screen bg-slate-950 text-slate-100">
-    <div class="flex min-h-screen">
-        <x-sidebar />
-        <div class="flex flex-1 flex-col">
+<body class="bg-gradient-to-b from-slate-50 via-mint/5 to-slate-100 text-slate-900 min-h-screen overflow-hidden">
+
+    <div class="flex h-screen w-full">
+
+        <!-- Sidebar -->
+        <x-sidebar class="flex-shrink-0 w-full md:w-64" />
+
+        <!-- Contenido principal -->
+        <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
             <x-navbar />
-            <main class="flex-1 bg-slate-950 p-4 md:p-6">
+            <main class="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 bg-white/80 shadow-inner shadow-emerald-200/30">
                 @yield('content')
                 {{ $slot ?? '' }}
             </main>
         </div>
     </div>
 
-    <script>
-        (() => {
-            const desktopSidebar = document.getElementById('dashboard-sidebar');
-            const sidebarToggle = document.getElementById('sidebar-toggle');
-            const storageKey = 'collcap-dashboard-sidebar';
-
-            const labels = desktopSidebar ? desktopSidebar.querySelectorAll('[data-sidebar-label]') : [];
-            const setDesktopState = (expanded) => {
-                if (!desktopSidebar) {
-                    return;
-                }
-                desktopSidebar.classList.toggle('w-64', expanded);
-                desktopSidebar.classList.toggle('w-20', !expanded);
-                labels.forEach((label) => {
-                    label.classList.toggle('opacity-0', !expanded);
-                    label.classList.toggle('pointer-events-none', !expanded);
-                    label.classList.toggle('hidden', !expanded);
-                });
-                if (sidebarToggle) {
-                    sidebarToggle.setAttribute('aria-expanded', expanded);
-                }
-                localStorage.setItem(storageKey, expanded);
-            };
-
-            const stored = localStorage.getItem(storageKey);
-            const shouldExpand = stored === null ? true : stored === 'true';
-            setDesktopState(shouldExpand);
-
-            sidebarToggle?.addEventListener('click', () => {
-                const currentlyExpanded = desktopSidebar?.classList.contains('w-64');
-                setDesktopState(!currentlyExpanded);
-            });
-
-            const mobilePanel = document.getElementById('sidebar-mobile-panel');
-            const mobileBackdrop = document.getElementById('sidebar-mobile-backdrop');
-            const mobileOpen = document.getElementById('sidebar-mobile-open');
-            const mobileClose = document.getElementById('sidebar-mobile-close');
-
-            const setMobileOpen = (open) => {
-                if (!mobilePanel || !mobileBackdrop) {
-                    return;
-                }
-                mobilePanel.classList.toggle('-translate-x-full', !open);
-                mobileBackdrop.classList.toggle('opacity-0', !open);
-                mobileBackdrop.classList.toggle('pointer-events-none', !open);
-            };
-
-            mobileOpen?.addEventListener('click', () => setMobileOpen(true));
-            mobileClose?.addEventListener('click', () => setMobileOpen(false));
-            mobileBackdrop?.addEventListener('click', () => setMobileOpen(false));
-        })();
-    </script>
-
+    <script defer src="{{ asset('js/layout.js') }}"></script>
     @stack('scripts')
 </body>
 

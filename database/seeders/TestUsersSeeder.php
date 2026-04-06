@@ -25,7 +25,7 @@ class TestUsersSeeder extends Seeder
             'name' => 'Empleado Operaciones',
             'email' => 'ops@collcapujllay.test',
             'role_label' => 'operations',
-            'password' => Hash::make('OpsAccess1!'),
+            'password' =>'OpsAccess1!',
             'estado' => true,
         ]);
 
@@ -33,7 +33,7 @@ class TestUsersSeeder extends Seeder
             'name' => 'Vigilancia',
             'email' => 'security@collcapujllay.test',
             'role_label' => 'security',
-            'password' => Hash::make('Secure123!'),
+            'password' => 'Secure123!',
             'estado' => false,
         ]);
     }

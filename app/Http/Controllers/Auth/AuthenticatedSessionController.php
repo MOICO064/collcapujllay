@@ -34,7 +34,6 @@ class AuthenticatedSessionController extends Controller
         $user = Auth::user();
 
         activity('auth')
-            ->performedOn($user)
             ->causedBy($user)
             ->withProperties([
                 'ip' => $request->ip(),
@@ -48,10 +47,7 @@ class AuthenticatedSessionController extends Controller
         ]);
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'message' => 'Autenticado correctamente.',
-                'intended' => route('dashboard'),
-            ]);
+            return redirect()->intended(route('dashboard'));
         }
 
         return redirect()->intended(route('dashboard', absolute: false));
