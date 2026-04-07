@@ -3,10 +3,9 @@
         <img data-sidebar-logo src="{{ asset('img/logo.png') }}" alt="Logo Parque Collcapujllay" class="h-28 w-28 object-contain transition-all duration-200" />
     </div>
 
-    <nav class="flex flex-col gap-1 px-3 py-5">
-
+    <nav class="flex flex-col gap-1 px-3 py-5 overflow-y-auto">
         <!-- Tablero -->
-        <a href="{{ route('dashboard') }}"
+        <a href="{{ route('dashboard') }}" title="Tablero"
             class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
            {{ request()->routeIs('dashboard') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
@@ -19,7 +18,7 @@
             <span data-sidebar-label class="transition-all duration-200">Tablero</span>
         </a>
         <!-- Usuarios -->
-        <a href="{{ route('usuarios.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+        <a href="{{ route('usuarios.index') }}" title="Usuarios" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
     {{ request()->routeIs('usuarios.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
 
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
@@ -36,7 +35,7 @@
             <span data-sidebar-label class="transition-all duration-200">Usuarios</span>
         </a>
         <!-- Roles -->
-        <a href="{{ route('roles.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+        <a href="{{ route('roles.index') }}" title="Roles" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
     {{ request()->routeIs('roles.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
 
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
@@ -52,7 +51,7 @@
         </a>
 
         <!-- Permisos -->
-        <a href="{{ route('permisos.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+        <a href="{{ route('permisos.index') }}" title="Permisos" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
     {{ request()->routeIs('permisos.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
 
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
@@ -67,7 +66,7 @@
             <span data-sidebar-label class="transition-all duration-200">Permisos</span>
         </a>
         <!-- Categorías -->
-        <a href="{{ route('categorias.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+        <a href="{{ route('categorias.index') }}" title="Categorías" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
     {{ request()->routeIs('categorias.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
 
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
@@ -82,7 +81,7 @@
             <span data-sidebar-label class="transition-all duration-200">Categorías</span>
         </a>
         <!-- Items -->
-        <a href="{{ route('items.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+        <a href="{{ route('items.index') }}" title="Items" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
 {{ request()->routeIs('items.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
 
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
@@ -98,7 +97,7 @@
             <span data-sidebar-label class="transition-all duration-200">Items</span>
         </a>
         <!-- Promociones -->
-        <a href="{{ route('promociones.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+        <a href="{{ route('promociones.index') }}" title="Promociones" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
 {{ request()->routeIs('promociones.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
 
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
@@ -113,42 +112,27 @@
             <span data-sidebar-label class="transition-all duration-200">Promociones</span>
         </a>
 
-        <!-- Operaciones -->
-        <a href="#operaciones"
-            class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
-           {{ request()->routeIs('operaciones.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
+        <!-- Ventas -->
+        <a href="{{ route('ventas.index') }}" title="Ventas" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+{{ request()->routeIs('ventas.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
+
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
-                {{ request()->routeIs('operaciones.*') ? 'text-emerald-700' : 'text-emerald-600 group-hover:bg-emerald-50' }}">
+{{ request()->routeIs('ventas.*') ? 'text-emerald-700' : 'text-emerald-600 group-hover:bg-emerald-50' }}">
+
+                <!-- Icono tipo carrito / venta -->
                 <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                    <path d="M6 18V8" />
-                    <path d="M10 18V12" />
-                    <path d="M14 18v-4" />
-                    <path d="M18 18V6" />
-                    <path d="M3 21h18" />
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 7h13M10 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
                 </svg>
             </span>
-            <span data-sidebar-label class="transition-all duration-200">Operaciones</span>
+
+            <span data-sidebar-label class="transition-all duration-200">Ventas</span>
         </a>
 
-        <!-- Entradas -->
-        <a href="#entradas"
-            class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
-           {{ request()->routeIs('entradas.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
-            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
-                {{ request()->routeIs('entradas.*') ? 'text-emerald-700' : 'text-emerald-600 group-hover:bg-emerald-50' }}">
-                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                    <path d="M3 7h18" />
-                    <path d="M3 17h18" />
-                    <path d="M12 7v10" />
-                    <path d="M6 3h12v4" />
-                    <path d="M6 17v4h12v-4" />
-                </svg>
-            </span>
-            <span data-sidebar-label class="transition-all duration-200">Entradas</span>
-        </a>
+
+
 
         <!-- Reportes -->
-        <a href="#reportes"
+        <a href="{{ route('reportes.index') }}"
             class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
            {{ request()->routeIs('reportes.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
@@ -162,19 +146,7 @@
             <span data-sidebar-label class="transition-all duration-200">Reportes</span>
         </a>
 
-        <!-- Configuración -->
-        <a href="#configuracion"
-            class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
-           {{ request()->routeIs('configuracion.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
-            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
-                {{ request()->routeIs('configuracion.*') ? 'text-emerald-700' : 'text-emerald-600 group-hover:bg-emerald-50' }}">
-                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-            </span>
-            <span data-sidebar-label class="transition-all duration-200">Configuración</span>
-        </a>
+
 
     </nav>
 
@@ -257,7 +229,7 @@
         </a>
 
         <!-- Reportes -->
-        <a href="#reportes"
+        <a href="{{ route('reportes.index') }}"
             class="flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
            {{ request()->routeIs('reportes.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
             <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)]

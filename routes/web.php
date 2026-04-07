@@ -8,16 +8,18 @@ use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\ReportController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 Route::get('/dashboard', function () {
     return view('admin.index');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth', 'verified')->group(function () {
     Route::prefix('usuarios')->name('usuarios.')->group(function () {
 
         Route::get('/', [UsuarioController::class, 'index'])->name('index');
@@ -75,6 +77,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/{promotion}/edit', [PromotionController::class, 'edit'])->name('edit');
         Route::put('/{promotion}', [PromotionController::class, 'update'])->name('update');
         Route::delete('/{promotion}', [PromotionController::class, 'destroy'])->name('destroy');
+    });
+    Route::prefix('ventas')->name('ventas.')->group(function () {
+        Route::get('/', [SaleController::class, 'index'])->name('index');
+        Route::get('/data', [SaleController::class, 'data'])->name('data');
+        Route::get('/create', [SaleController::class, 'create'])->name('create');
+        Route::post('/', [SaleController::class, 'store'])->name('store');
+        Route::get('/{venta}/edit', [SaleController::class, 'edit'])->name('edit');
+        Route::put('/{venta}', [SaleController::class, 'update'])->name('update');
+        Route::get('/{venta}/factura/pdf', [SaleController::class, 'facturaPdf'])->name('factura.pdf');
+        Route::delete('/{venta}', [SaleController::class, 'destroy'])->name('destroy');
+    });
+    Route::prefix('reportes')->name('reportes.')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('/ventas/items/pdf', [ReportController::class, 'itemSalesPdf'])->name('ventas.items.pdf');
     });
 });
 

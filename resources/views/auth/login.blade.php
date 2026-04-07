@@ -27,7 +27,15 @@
                     Ingresa tus credenciales para acceder.
                 </p>
             </header>
-            <div id="form-errors" class="admin-login-feedback" style="display:none;" role="alert"></div>
+            @php
+                $authDisabledMessage = session('auth_disabled_message');
+            @endphp
+            <div id="form-errors"
+                class="admin-login-feedback"
+                role="alert"
+                style="{{ $authDisabledMessage ? 'display:block;' : 'display:none;' }}">
+                {{ $authDisabledMessage ?? '' }}
+            </div>
             <template x-if="errors.form">
                 <div class="admin-login-feedback" x-text="errors.form" role="alert" aria-live="polite"></div>
             </template>
