@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('promotion_usages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('promotion_id')->constrained('promotions')->onDelete('cascade');
-            $table->string('ci'); // Cédula de identidad
+            $table->string('ci'); 
             $table->timestamp('used_at');
             $table->timestamps();
         });

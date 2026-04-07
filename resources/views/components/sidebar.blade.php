@@ -81,6 +81,22 @@
 
             <span data-sidebar-label class="transition-all duration-200">Categorías</span>
         </a>
+        <!-- Items -->
+        <a href="{{ route('items.index') }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
+    {{ request()->routeIs('items.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
+
+            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
+        {{ request()->routeIs('items.*') ? 'text-emerald-700' : 'text-emerald-600 group-hover:bg-emerald-50' }}">
+
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M4 7h16v12H4z" />
+                    <path d="M4 5h16v2H4z" />
+                    <path d="M9 11h6" />
+                </svg>
+            </span>
+
+            <span data-sidebar-label class="transition-all duration-200">Items</span>
+        </a>
         <!-- Operaciones -->
         <a href="#operaciones"
             class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition

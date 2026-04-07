@@ -6,6 +6,7 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\ItemController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -55,6 +56,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/{categoria}/edit', [CategoriaController::class, 'edit'])->name('edit');
         Route::put('/{categoria}', [CategoriaController::class, 'update'])->name('update');
         Route::delete('/{categoria}', [CategoriaController::class, 'destroy'])->name('destroy');
+    });
+    Route::prefix('items')->name('items.')->group(function () {
+        Route::get('/', [ItemController::class, 'index'])->name('index');
+        Route::get('/data', [ItemController::class, 'data'])->name('data');
+        Route::get('/create', [ItemController::class, 'create'])->name('create');
+        Route::post('/', [ItemController::class, 'store'])->name('store');
+        Route::get('/{item}/edit', [ItemController::class, 'edit'])->name('edit');
+        Route::put('/{item}', [ItemController::class, 'update'])->name('update');
+        Route::delete('/{item}', [ItemController::class, 'destroy'])->name('destroy');
     });
 });
 

@@ -11,10 +11,10 @@ class TestUsersSeeder extends Seeder
 {
     public function run(): void
     {
-        // 🔥 Limpiar cache de permisos de Spatie
+       
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // 🔐 Crear permisos
+        
         $permisos = [
             'usuarios.ver',
             'usuarios.crear',
@@ -36,24 +36,23 @@ class TestUsersSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permiso]);
         }
 
-        // 🔥 Crear roles
         $adminRole = Role::firstOrCreate(['name' => 'Administrador']);
         $opsRole = Role::firstOrCreate(['name' => 'Cajero']);
         $securityRole = Role::firstOrCreate(['name' => 'Encargado']);
 
-        // 🧠 Asignar permisos a roles
-        $adminRole->syncPermissions(Permission::all()); // Admin = todos los permisos
+
+        $adminRole->syncPermissions(Permission::all()); 
 
         $opsRole->syncPermissions([
-            'usuarios.ver', // Cajero solo puede ver usuarios
+            'usuarios.ver', 
         ]);
 
         $securityRole->syncPermissions([
             'usuarios.ver',
-            'usuarios.editar', // Encargado puede ver y editar usuarios
+            'usuarios.editar', 
         ]);
 
-        // 👤 Crear usuarios (la factory ya hashea el password)
+        
         $admin = User::factory()->create([
             'name' => 'Director Parque',
             'email' => 'admin@collcapujllay.test',
