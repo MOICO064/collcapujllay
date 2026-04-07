@@ -6,10 +6,12 @@ use App\Models\Category;
 use App\Models\SaleItem;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Item extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'name',
@@ -31,5 +33,12 @@ class Item extends Model
     {
         return $this->belongsTo(Category::class);
     }
-
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('Item')
+            ->logOnly(['name', 'category_id', 'price', 'description'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 }

@@ -7,6 +7,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\PromotionController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -65,6 +66,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/{item}/edit', [ItemController::class, 'edit'])->name('edit');
         Route::put('/{item}', [ItemController::class, 'update'])->name('update');
         Route::delete('/{item}', [ItemController::class, 'destroy'])->name('destroy');
+    });
+    Route::prefix('promociones')->name('promociones.')->group(function () {
+        Route::get('/', [PromotionController::class, 'index'])->name('index');
+        Route::get('/data', [PromotionController::class, 'data'])->name('data');
+        Route::get('/create', [PromotionController::class, 'create'])->name('create');
+        Route::post('/', [PromotionController::class, 'store'])->name('store');
+        Route::get('/{promotion}/edit', [PromotionController::class, 'edit'])->name('edit');
+        Route::put('/{promotion}', [PromotionController::class, 'update'])->name('update');
+        Route::delete('/{promotion}', [PromotionController::class, 'destroy'])->name('destroy');
     });
 });
 
