@@ -5,10 +5,12 @@ namespace App\Models;
 use App\Models\Promotion;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Sale extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'sale_date',
@@ -32,6 +34,28 @@ class Sale extends Model
         'promotion_id' => 'int',
         'customer_ci' => 'string',
     ];
+
+    /**
+     * Configuración de logs
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('Sale')
+            ->logOnly([
+                'sale_date',
+                'invoice_number',
+                'status',
+                'subtotal',
+                'discount_type',
+                'discount_value',
+                'total',
+                'promotion_id',
+                'customer_ci',
+            ])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     public function getFormattedInvoiceNumberAttribute(): string
     {
@@ -57,5 +81,4 @@ class Sale extends Model
     {
         return $this->belongsTo(Promotion::class);
     }
-
 }

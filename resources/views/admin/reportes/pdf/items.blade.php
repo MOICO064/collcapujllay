@@ -6,176 +6,286 @@
     <title>Reporte de ventas por ítem</title>
     <style>
         @page {
-            size: 11in 14in;
-            margin: 10mm;
+            size: letter portrait;
+            margin: 12mm;
         }
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 10px;
-            color: #000;
+            font-family: 'Inter', 'Arial', sans-serif;
+            font-size: 9px;
             margin: 0;
+            color: #0b1824;
+            background: #fff;
         }
 
-        .invoice {
+        .report {
             width: 100%;
-            padding: 0 10px;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .separator {
-            border-bottom: 1px dashed #999;
-            margin: 8px 0;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #dfe5ee;
         }
 
-        table {
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .title {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .eyebrow {
+            font-size: 8px;
+            color: #555b63;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+        }
+
+        .meta {
+            text-align: right;
+            font-size: 9px;
+            line-height: 1.2;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .summary-card {
+            background: #ffffff;
+            border: 1px solid #d6dee6;
+            border-radius: 8px;
+            padding: 6px 8px;
+            text-align: center;
+        }
+
+        .summary-card .label {
+            font-size: 8px;
+            color: #6b7789;
+            text-transform: uppercase;
+        }
+
+        .summary-card strong {
+            display: block;
+            margin-top: 4px;
+            font-size: 12px;
+        }
+
+        .section-title {
+            margin-top: 12px;
+            margin-bottom: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 4px 6px;
+            background: #f0f4f8;
+            border: 1px solid #dce5ef;
+            border-radius: 6px;
+        }
+
+        table.data-table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 8.5px;
+            table-layout: fixed;
+            word-wrap: break-word;
+            margin-bottom: 4px;
         }
 
-        th,
-        td {
-            padding: 4px 2px;
+        table.data-table th,
+        table.data-table td {
+            border: 1px solid #dfe5ee;
+            padding: 4px 6px;
+            overflow-wrap: break-word;
         }
 
-        thead th {
-            border-bottom: 1px solid #000;
+        table.data-table th {
+            background: #eef1f6;
+            font-weight: 600;
             text-align: left;
         }
 
-        tbody td {
-            border-bottom: 1px dashed #ccc;
-        }
-
-        .right {
+        table.data-table td.text-right {
             text-align: right;
         }
 
-        .center {
-            text-align: center;
+        .total-row td {
+            font-weight: 600;
+            background: #f3f6fa;
         }
 
-        .totals td {
-            padding: 3px 0;
+        .footer {
+            margin-top: 12px;
+            font-size: 7px;
+            text-align: center;
+            color: #6b7485;
         }
 
-        footer {
-            margin-top: 15px;
-            text-align: center;
-            font-size: 9px;
+        .summary-note {
+            font-size: 8px;
+            color: #4a5568;
+            margin-top: 4px;
+        }
+
+        tr {
+            page-break-inside: avoid;
         }
     </style>
 </head>
 
 <body>
     @php
-        $logoPath = public_path('img/logo.png');
-        $logoData = file_exists($logoPath)
-            ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
-            : null;
-        $rangeLabel = \Illuminate\Support\Carbon::parse($startDate)->format('d/m/Y') . ' - ' . \Illuminate\Support\Carbon::parse($endDate)->format('d/m/Y');
+    $logoPath = public_path('img/logo.png');
+    $logoData = file_exists($logoPath)
+    ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
+    : null;
+
+    $payload = $payload ?? [];
+    $summary = $payload['summary'] ?? [];
+    $items = $payload['items'] ?? [];
+    $promotions = $payload['promotions'] ?? [];
+
+    $netIncome = (float) ($summary['totalIncome'] ?? 0);
+    $grossIncome = (float) ($summary['itemRevenue'] ?? 0);
+    $discountTotal = (float) ($summary['totalDiscount'] ?? 0);
+    $averagePrice = (float) ($summary['averagePrice'] ?? 0);
     @endphp
 
-    <div class="invoice">
-        <table>
-            <tr>
-                <td width="15%">
-                    @if ($logoData)
-                        <img src="{{ $logoData }}" width="50">
-                    @endif
-                </td>
-                <td width="85%">
-                    <strong style="font-size:16px;">COLCAPUJLLAY</strong><br>
-                    <span>Parque natural · Colcapirhua</span>
-                </td>
-            </tr>
-        </table>
+    <div class="report">
+        <div class="header">
+            <div class="header-left">
+                @if ($logoData)
+                <img src="{{ $logoData }}" alt="Logo" class="logo">
+                @endif
+                <div class="eyebrow">Parque natural · Colcapirhua</div>
+                <div class="title">REPORTE DE VENTAS POR ÍTEM</div>
+            </div>
+            <div class="meta">
+                <div><strong>Período:</strong> {{ $periodLabel }}</div>
+                <div><strong>Ítem:</strong> {{ $selectedItemLabel }}</div>
+                <div>{{ now()->format('d/m/Y H:i') }}</div>
+            </div>
+        </div>
 
-        <div class="separator"></div>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="label">Cantidad total</div>
+                <strong>{{ number_format($summary['totalQuantity'] ?? 0, 0, ',', '.') }}</strong>
+            </div>
+            <div class="summary-card">
+                <div class="label">Ingresos netos</div>
+                <strong>Bs {{ number_format($netIncome, 2, ',', '.') }}</strong>
+            </div>
+            <div class="summary-card">
+                <div class="label">Ingresos brutos</div>
+                <strong>Bs {{ number_format($grossIncome, 2, ',', '.') }}</strong>
+            </div>
+            <div class="summary-card">
+                <div class="label">Descuentos aplicados</div>
+                <strong>Bs {{ number_format($discountTotal, 2, ',', '.') }}</strong>
+            </div>
+        </div>
+        <div class="summary-note">Precio promedio por unidad: <strong>Bs {{ number_format($averagePrice, 2, ',', '.') }}</strong>. Los descuentos se restan del ingreso bruto; el total neto no puede ser negativo.</div>
 
-        <p><strong>Reporte:</strong> Ventas por ítem</p>
-        <p><strong>Período:</strong> {{ $rangeLabel }}</p>
-        <p><strong>Ítem:</strong> {{ $selectedItemLabel }}</p>
-
-        <table style="margin-top:10px;">
+        <div class="section-title">Detalle por ítem</div>
+        <table class="data-table">
             <thead>
                 <tr>
                     <th>Ítem</th>
-                    <th class="right">Cantidad</th>
-                    <th class="right">Precio promedio</th>
-                    <th class="right">Ingreso</th>
+                    <th class="text-right">Cantidad</th>
+                    <th class="text-right">Precio promedio</th>
+                    <th class="text-right">Ingreso</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse ($reportItems as $item)
-                    <tr>
-                        <td>{{ $item->name }}</td>
-                        <td class="right">{{ number_format($item->quantity, 0, ',', '.') }}</td>
-                        <td class="right">Bs {{ number_format($item->avg_price ?? 0, 2, ',', '.') }}</td>
-                        <td class="right">Bs {{ number_format($item->revenue, 2, ',', '.') }}</td>
-                    </tr>
+                @forelse ($items as $item)
+                <tr>
+                    <td>{{ $item['name'] }}</td>
+                    <td class="text-right">{{ number_format($item['quantity'], 0, ',', '.') }}</td>
+                    <td class="text-right">Bs {{ number_format($item['avg_price'] ?? 0, 2, ',', '.') }}</td>
+                    <td class="text-right">Bs {{ number_format($item['revenue'], 2, ',', '.') }}</td>
+                </tr>
                 @empty
-                    <tr>
-                        <td colspan="4" class="center">No hay datos para el periodo seleccionado.</td>
-                    </tr>
+                <tr>
+                    <td colspan="4" class="text-center">Sin datos</td>
+                </tr>
                 @endforelse
+                <tr class="total-row">
+                    <td>Total</td>
+                    <td class="text-right">{{ number_format($summary['totalQuantity'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="text-right">Bs {{ number_format($averagePrice, 2, ',', '.') }}</td>
+                    <td class="text-right">Bs {{ number_format($grossIncome, 2, ',', '.') }}</td>
+                </tr>
             </tbody>
         </table>
 
-        <table class="totals" style="margin-top:10px;">
-            <tr>
-                <td>Total cantidad</td>
-                <td class="right">{{ number_format($totalQuantity, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>Total ingresos</td>
-                <td class="right">Bs {{ number_format($totalIncome, 2, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>Precio promedio general</td>
-                <td class="right">Bs {{ number_format($averagePrice, 2, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>Ingresos antes de descuentos (ítem)</td>
-                <td class="right">Bs {{ number_format($itemRevenue, 2, ',', '.') }}</td>
-            </tr>
-        </table>
-
-        <div class="separator"></div>
-        <p><strong>Notas:</strong> Los descuentos no se suman al ingreso neto; si no ingresó dinero, se muestra Bs 0,00.</p>
-
-        <table style="margin-top:10px;">
-            <thead class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <div class="section-title">Ventas con promociones</div>
+        <table class="data-table">
+            <thead>
                 <tr>
                     <th>Factura</th>
                     <th>Fecha</th>
                     <th>Promoción</th>
-                    <th class="right">Tipo</th>
-                    <th class="right">Descuento</th>
-                    <th class="right">Total neto</th>
+                    <th>Tipo</th>
+                    <th class="text-right">Descuento</th>
+                    <th class="text-right">Total neto</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($salesWithPromotions as $sale)
-                    <tr>
-                        <td>{{ $sale->formatted_invoice_number }}</td>
-                        <td>{{ optional($sale->sale_date)->format('d/m/Y H:i') }}</td>
-                        <td>{{ $sale->promotion?->name ?? '—' }}</td>
-                        <td class="right">{{ $sale->promotion?->discount_type === 'percentage' ? 'Porcentaje' : 'Monto fijo' }}</td>
-                        <td class="right">Bs {{ number_format($sale->discount_amount, 2, ',', '.') }}</td>
-                        <td class="right">Bs {{ number_format($sale->total, 2, ',', '.') }}</td>
-                    </tr>
+                @forelse ($promotions as $sale)
+                <tr>
+                    <td>{{ $sale['invoice'] }}</td>
+                    <td>{{ $sale['date'] ?? '—' }}</td>
+                    <td>{{ $sale['promotion'] ?? '—' }}</td>
+                    <td class="text-right">
+                        @if ($sale['discount_type'] === 'percentage')
+                        Porcentaje ({{ number_format($sale['discount_rate'] ?? 0, 0, ',', '.') }}%)
+                        @else
+                        Monto fijo
+                        @endif
+                    </td>
+                    <td class="text-right">
+                        Bs {{ number_format($sale['discount'], 2, ',', '.') }}
+                    </td>
+                    <td class="text-right">Bs {{ number_format($sale['total'], 2, ',', '.') }}</td>
+                </tr>
                 @empty
-                    <tr>
-                        <td colspan="6" class="center">No se aplicaron promociones en este periodo.</td>
-                    </tr>
+                <tr>
+                    <td colspan="6" class="text-center">Sin promociones</td>
+                </tr>
                 @endforelse
+                <tr class="total-row">
+                    <td colspan="4">Total descuentos</td>
+                    <td class="text-right">Bs {{ number_format($discountTotal, 2, ',', '.') }}</td>
+                    <td></td>
+                </tr>
             </tbody>
         </table>
 
-        <footer>
-            Gracias por su visita a Parque Collcapujllay<br>
-            Conserve este comprobante
-        </footer>
+        <div class="footer">
+            Reporte generado · {{ now()->format('d/m/Y H:i') }}
+        </div>
     </div>
 </body>
 

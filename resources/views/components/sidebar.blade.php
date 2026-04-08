@@ -129,10 +129,8 @@
         </a>
 
 
-
-
         <!-- Reportes -->
-        <a href="{{ route('reportes.index') }}"
+        <a href="{{ route('reportes.index') }}" title="Reportes"
             class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
            {{ request()->routeIs('reportes.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
