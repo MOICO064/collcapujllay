@@ -18,28 +18,10 @@
         </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-        <div class="space-y-2">
-            <label for="parent_id" class="font-semibold text-slate-700">Categoría padre</label>
-            @php
-                $selectedParent = old('parent_id', isset($categoria) ? $categoria->parent_id : '');
-            @endphp
-            <select name="parent_id" id="parent_id" class="w-full border border-slate-300 rounded-lg px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Ninguna</option>
-                @foreach($categorias as $categoriaOption)
-                <option value="{{ $categoriaOption->id }}" {{ $selectedParent == $categoriaOption->id ? 'selected' : '' }}>
-                    {{ $categoriaOption->name }}
-                </option>
-                @endforeach
-            </select>
-            <p class="field-error text-sm text-red-600 mt-1" id="parent_id-error"></p>
-        </div>
-
-        <div class="space-y-2">
-            <label for="description" class="font-semibold text-slate-700">Descripción</label>
-            <textarea name="description" id="description" rows="3" class="w-full border border-slate-300 rounded-lg px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('description', isset($categoria) ? $categoria->description : '') }}</textarea>
-            <p class="field-error text-sm text-red-600 mt-1" id="description-error"></p>
-        </div>
+    <div class="space-y-2">
+        <label for="description" class="font-semibold text-slate-700">Descripción</label>
+        <textarea name="description" id="description" rows="3" class="w-full border border-slate-300 rounded-lg px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('description', isset($categoria) ? $categoria->description : '') }}</textarea>
+        <p class="field-error text-sm text-red-600 mt-1" id="description-error"></p>
     </div>
 
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-slate-200">

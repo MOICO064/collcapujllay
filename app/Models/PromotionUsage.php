@@ -13,6 +13,7 @@ class PromotionUsage extends Model
     protected $fillable = [
         'promotion_id',
         'ci',
+        'code',
         'used_at',
         'sale_id',
     ];
@@ -27,6 +28,7 @@ class PromotionUsage extends Model
             ->logOnly([
                 'promotion_id',
                 'ci',
+                'code',
                 'used_at',
                 'sale_id',
             ])

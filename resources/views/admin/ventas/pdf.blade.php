@@ -11,28 +11,58 @@
     ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
     : null;
 
-    $promotionName = $venta->promotion?->name;
-    $discountTypeLabel = $venta->promotion
-    ? ($venta->promotion->discount_type === 'percentage' ? 'Porcentaje' : 'Monto fijo') . ' · ' . $promotionName
-    : 'Sin promoción';
+    $paymentMethodLabel = ucfirst($venta->payment_method ?? 'efectivo');
     $discountAmount = $venta->discount_amount;
     @endphp
 
     <style>
         @page {
-            size: 11in 14in;
-            margin: 10mm;
+            size: 12cm 16.5cm;
+            margin: 0;
+        }
+
+        html,
+        body {
+            width: 12cm;
+            height: 16.5cm;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 11cm;
+            height: 16.5cm;
+            margin: 0;
+            padding: 0;
         }
 
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 10px;
+            font-size: 9px;
             color: #000;
-            margin: 0;
+            background: #fff;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            box-sizing: border-box;
+            padding: 0;
+        }
+
+        .invoice-wrapper {
+            width: 9cm;
+            height: 16.5cm;
+            box-sizing: border-box;
+            padding: 10px;
+            padding-right: calc(3cm + 10px);
         }
 
         .invoice {
             width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .separator {
@@ -47,7 +77,7 @@
 
         th,
         td {
-            padding: 4px 2px;
+            padding: 2px 4px;
         }
 
         thead th {
@@ -72,15 +102,16 @@
         }
 
         footer {
-            margin-top: 15px;
+            margin-top: 4px;
             text-align: center;
-            font-size: 9px;
+            font-size: 8px;
         }
     </style>
 </head>
 
 <body>
-    <div class="invoice">
+    <div class="invoice-wrapper">
+        <div class="invoice">
 
         <!-- HEADER -->
         <table>
@@ -101,12 +132,15 @@
         <table style="margin-top:8px;">
             <tr>
                 <td>
-                    <strong>FACTURA</strong><br>
+                    <strong>COMPROBANTE</strong><br>
                     #{{ $venta->formatted_invoice_number }}
                 </td>
                 <td class="right">
                     {{ $venta->sale_date?->format('d/m/Y') }}<br>
                     {{ $venta->sale_date?->format('H:i') }}
+                    @if($venta->customer_code)
+                        <br><strong>Cód. cliente:</strong> {{ $venta->customer_code }}
+                    @endif
                 </td>
             </tr>
         </table>
@@ -114,8 +148,13 @@
         <div class="separator"></div>
 
         <!-- INFO -->
-        <p><strong>Promoción:</strong> {{ $discountTypeLabel }}</p>
-        <p><strong>Cliente:</strong> {{ $venta->customer_ci ?? 'Consumidor final' }}</p>
+        <p><strong>Método de pago:</strong> {{ $paymentMethodLabel }}</p>
+        @if($venta->user)
+        <p><strong>Usuario:</strong> {{ $venta->user->name }}</p>
+        @endif
+        @if($venta->glosa)
+        <p><strong>Glosa:</strong> {{ $venta->glosa }}</p>
+        @endif
 
         <!-- ITEMS -->
         <table>
@@ -130,7 +169,12 @@
             <tbody>
                 @foreach($venta->saleItems as $line)
                 <tr>
-                    <td>{{ $line->item?->name ?? 'Ítem eliminado' }}</td>
+                    <td>
+                        {{ $line->item?->name ?? 'Ítem eliminado' }}
+                        @if($line->item?->use_once && $line->use_once_number)
+                            <div class="text-xs text-slate-500">Nº único: {{ $line->use_once_number }}</div>
+                        @endif
+                    </td>
                     <td class="right">{{ $line->quantity }}</td>
                     <td class="right">Bs {{ number_format($line->unit_price, 2, ',', '.') }}</td>
                     <td class="right">Bs {{ number_format($line->total, 2, ',', '.') }}</td>
@@ -142,19 +186,6 @@
         <!-- TOTALES -->
         <table class="totals" style="margin-top:10px;">
             <tr>
-                <td>Subtotal</td>
-                <td class="right">Bs {{ number_format($venta->subtotal, 2, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>Descuento</td>
-                <td class="right">
-                    Bs {{ number_format($discountAmount, 2, ',', '.') }}
-                    @if($venta->discount_type === 'percentage' && $venta->discount_value > 0)
-                        <br><span style="font-size:9px;">({{ number_format($venta->discount_value, 2, ',', '.') }} %)</span>
-                    @endif
-                </td>
-            </tr>
-            <tr>
                 <td><strong>Total</strong></td>
                 <td class="right"><strong>Bs {{ number_format($venta->total, 2, ',', '.') }}</strong></td>
             </tr>
@@ -163,9 +194,10 @@
         <!-- FOOTER -->
         <footer>
             Gracias por su visita a Parque Collcapujllay<br>
-            Conserve este comprobante
+            COMPROBANTE NO TRIBUTARIO - Este comprobante no tiene validez tributaria.
         </footer>
 
+        </div>
     </div>
 </body>
 

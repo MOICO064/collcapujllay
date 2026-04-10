@@ -4,29 +4,45 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use App\Models\Sale;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
         $itemId = $request->query('item_id');
+        $selectedUserId = $request->query('user_id');
+
+        if ($user?->hasRole('cajas')) {
+            $selectedUserId = $user->id;
+        }
+
+        $userOptions = User::select(['id', 'name'])
+            ->when(! $user?->hasRole('cajas'), fn ($query) => $query->orderBy('name'))
+            ->when($user?->hasRole('cajas'), fn ($query) => $query->where('id', $user->id))
+            ->get();
 
         $itemOptions = Item::select(['id', 'name'])->orderBy('name')->get();
         $selectedItem = $itemId ? $itemOptions->firstWhere('id', (int) $itemId) : null;
 
-        $reportData = $this->collectReportData($startDate, $endDate, $selectedItem);
+        $reportData = $this->collectReportData($startDate, $endDate, $selectedItem, $selectedUserId);
         $initialAjaxPayload = $this->buildAjaxPayload($reportData, $startDate, $endDate);
 
         return view('admin.reportes.index', array_merge($reportData, [
             'startDate' => $startDate,
             'endDate' => $endDate,
             'itemOptions' => $itemOptions,
+            'userOptions' => $userOptions,
+            'isCajero' => $user?->hasRole('cajas'),
+            'selectedUserId' => $selectedUserId,
             'initialAjaxPayload' => $initialAjaxPayload,
             'reportEndpoint' => route('reportes.data'),
         ]));
@@ -34,12 +50,19 @@ class ReportController extends Controller
 
     public function data(Request $request)
     {
+        $user = Auth::user();
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
         $itemId = $request->query('item_id');
+        $selectedUserId = $request->query('user_id');
+
+        if ($user?->hasRole('cajas')) {
+            $selectedUserId = $user->id;
+        }
+
         $selectedItem = $itemId ? Item::find((int) $itemId) : null;
 
-        $reportData = $this->collectReportData($startDate, $endDate, $selectedItem);
+        $reportData = $this->collectReportData($startDate, $endDate, $selectedItem, $selectedUserId);
 
         return response()->json($this->buildAjaxPayload($reportData, $startDate, $endDate));
     }
@@ -49,16 +72,22 @@ class ReportController extends Controller
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
         $itemId = $request->query('item_id');
+        $selectedUserId = $request->query('user_id');
+
+        if (Auth::user()?->hasRole('cajas')) {
+            $selectedUserId = Auth::id();
+        }
 
         $selectedItem = $itemId ? Item::find((int) $itemId) : null;
 
-        $reportData = $this->collectReportData($startDate, $endDate, $selectedItem);
+        $reportData = $this->collectReportData($startDate, $endDate, $selectedItem, $selectedUserId);
         $payload = $this->buildAjaxPayload($reportData, $startDate, $endDate);
 
         $pdf = Pdf::loadView('admin.reportes.pdf.items', array_merge($reportData, [
             'startDate' => $startDate,
             'endDate' => $endDate,
             'selectedItemLabel' => $selectedItem?->name ?? 'Todos',
+            'selectedUserId' => $selectedUserId,
             'payload' => $payload,
         ]))
             ->setPaper('letter', 'portrait')
@@ -70,18 +99,18 @@ class ReportController extends Controller
         return $pdf->stream($fileName . '.pdf');
     }
 
-    private function collectReportData(string $startDate, string $endDate, ?Item $selectedItem = null): array
+    private function collectReportData(string $startDate, string $endDate, ?Item $selectedItem = null, ?int $userId = null): array
     {
         $itemId = $selectedItem?->id;
 
-        $reportItems = $this->itemReportQuery($startDate, $endDate, $itemId)
+        $reportItems = $this->itemReportQuery($startDate, $endDate, $itemId, $userId)
             ->orderByDesc('revenue')
             ->get();
 
         $totalQuantity = (float) $reportItems->sum('quantity');
         $itemRevenue = (float) $reportItems->sum('revenue');
 
-        $salesBaseQuery = $this->salesBaseQuery($startDate, $endDate, $itemId);
+        $salesBaseQuery = $this->salesBaseQuery($startDate, $endDate, $itemId, $userId);
 
         $totalIncome = (float) (clone $salesBaseQuery)->sum('total');
 
@@ -92,28 +121,44 @@ class ReportController extends Controller
 
         $averagePrice = $totalQuantity > 0 ? $itemRevenue / $totalQuantity : 0;
 
-        $salesWithPromotions = (clone $salesBaseQuery)
-            ->with('promotion')
-            ->whereNotNull('promotion_id')
-            ->orderBy('sale_date')
+        $periodLabel = Carbon::parse($startDate)->format('d/m/Y') . ' - ' . Carbon::parse($endDate)->format('d/m/Y');
+
+        $salesRecords = (clone $salesBaseQuery)
+            ->with(['user:id,name', 'saleItems.item:id,name'])
+            ->orderByDesc('sale_date')
             ->get();
 
-        $periodLabel = Carbon::parse($startDate)->format('d/m/Y') . ' - ' . Carbon::parse($endDate)->format('d/m/Y');
+        $salesList = [];
+        foreach ($salesRecords as $sale) {
+            $saleDate = $sale->sale_date;
+            $saleUser = $sale->user?->name ?? 'Sistema';
+            $glosa = $sale->glosa;
+            foreach ($sale->saleItems as $line) {
+                $salesList[] = [
+                    'date' => $saleDate?->format('d/m/Y') ?? '',
+                    'time' => $saleDate?->format('H:i') ?? '',
+                    'user' => $saleUser,
+                    'item' => $line->item?->name ?? 'Ítem eliminado',
+                    'quantity' => (int) $line->quantity,
+                    'total' => (float) $line->total,
+                    'glosa' => $glosa,
+                ];
+            }
+        }
+        $salesList = collect($salesList)->values();
 
         return [
             'reportItems' => $reportItems,
-            'salesWithPromotions' => $salesWithPromotions,
-
             'totalQuantity' => $totalQuantity,
             'itemRevenue' => $itemRevenue,
-
-            'totalIncome' => $totalIncome,     
-            'totalDiscount' => $totalDiscount, 
+            'totalIncome' => $totalIncome,
+            'totalDiscount' => $totalDiscount,
             'averagePrice' => $averagePrice,
-
             'periodLabel' => $periodLabel,
             'selectedItemLabel' => $selectedItem?->name ?? 'Todos',
             'selectedItemId' => $itemId,
+            'salesList' => $salesList,
+            'selectedUserId' => $userId,
         ];
     }
 
@@ -134,24 +179,17 @@ class ReportController extends Controller
                 'avg_price' => (float) $item->avg_price,
                 'revenue' => (float) $item->revenue,
             ])->values(),
-            'promotions' => $data['salesWithPromotions']->map(fn($sale) => [
-                'invoice' => $sale->formatted_invoice_number,
-                'date' => $sale->sale_date?->format('d/m/Y H:i'),
-                'promotion' => $sale->promotion?->name,
-            'discount_type' => $sale->promotion?->discount_type,
-            'discount' => (float) $sale->discount_amount,
-            'discount_rate' => (float) ($sale->promotion?->discount_value ?? 0),
-            'total' => (float) $sale->total,
-        ])->values(),
             'periodLabel' => $data['periodLabel'] ?? null,
             'selectedItemLabel' => $data['selectedItemLabel'] ?? 'Todos',
             'selectedItemId' => $data['selectedItemId'] ?? null,
+            'salesList' => $data['salesList']->toArray(),
+            'selectedUserId' => $data['selectedUserId'] ?? null,
             'startDate' => $startDate,
             'endDate' => $endDate,
         ];
     }
 
-    private function itemReportQuery(string $startDate, string $endDate, ?int $itemId = null)
+    private function itemReportQuery(string $startDate, string $endDate, ?int $itemId = null, ?int $userId = null)
     {
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
@@ -167,17 +205,22 @@ class ReportController extends Controller
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->where('sales.status', 'active')
             ->whereBetween('sales.sale_date', [$start, $end])
+            ->when($userId, fn($query) => $query->where('sales.user_id', $userId))
             ->when($itemId, fn($query) => $query->where('items.id', $itemId))
             ->groupBy('items.id', 'items.name');
     }
 
-    private function salesBaseQuery(string $startDate, string $endDate, ?int $itemId = null)
+    private function salesBaseQuery(string $startDate, string $endDate, ?int $itemId = null, ?int $userId = null)
     {
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
 
         $query = Sale::where('status', 'active')
             ->whereBetween('sale_date', [$start, $end]);
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
 
         if ($itemId) {
             $query->whereHas('saleItems', fn($sub) => $sub->where('item_id', $itemId));

@@ -43,9 +43,9 @@
                 <tr>
                     <th>Fecha</th>
                     <th>Ítems</th>
-                    <th>Promoción</th>
-                    <th>Subtotal</th>
-                    <th>Descuento</th>
+                    <th>Método</th>
+                    <th>Usuario</th>
+                    <th>Glosa</th>
                     <th>Total</th>
                     <th>Acciones</th>
                 </tr>

@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
-use App\Models\Promotion;
-use App\Models\PromotionUsage;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -23,10 +24,20 @@ class SaleController extends Controller
 
     public function data()
     {
-        $query = Sale::with(['promotion', 'saleItems.item'])
+        $query = Sale::with([
+                'saleItems.item',
+                'user:id,name'
+            ])
             ->where('status', 'active')
             ->withCount('saleItems')
-            ->select(['id', 'sale_date', 'subtotal', 'discount_type', 'discount_value', 'total', 'promotion_id', 'status']);
+            ->select(['id', 'sale_date', 'subtotal', 'discount_type', 'discount_value', 'total', 'payment_method', 'status', 'user_id', 'glosa']);
+
+        $user = Auth::user();
+        if ($user && $user->hasRole('cajas')) {
+            $query->whereDate('sale_date', now()->format('Y-m-d'))
+                ->where('user_id', $user->id);
+        }
+        $query->orderBy('sale_date', 'desc');
 
         return DataTables::of($query)
             ->editColumn('sale_date', function (Sale $sale) {
@@ -42,12 +53,21 @@ class SaleController extends Controller
                     return "{$name} × {$line->quantity}";
                 })->implode('<br>');
             })
+            ->addColumn('payment_method', function (Sale $sale) {
+                return ucfirst($sale->payment_method ?? 'efectivo');
+            })
+            ->addColumn('user', function (Sale $sale) {
+                return $sale->user?->name ?? 'Sistema';
+            })
+            ->addColumn('glosa', function (Sale $sale) {
+                if (!$sale->glosa) {
+                    return '';
+                }
+                return Str::limit($sale->glosa, 60);
+            })
             ->addColumn('discount_display', function (Sale $sale) {
                 $value = number_format($sale->discount_value, 2, ',', '.');
                 return $sale->discount_type === 'percentage' ? "{$value} %" : "Bs {$value}";
-            })
-            ->addColumn('promotion', function (Sale $sale) {
-                return $sale->promotion?->name ?? 'Sin promoción';
             })
             ->addColumn('acciones', function (Sale $sale) {
                 return view('admin.ventas.partials.actions', compact('sale'))->render();
@@ -63,11 +83,11 @@ class SaleController extends Controller
 
         $venta->load([
             'saleItems.item:id,name,price',
-            'promotion:id,name,discount_type,discount_value'
+            'user:id,name',
         ]);
 
         $pdf = Pdf::loadView('admin.ventas.pdf', compact('venta'))
-            ->setPaper([0, 0, 792, 1008]) 
+            ->setPaper([0, 0, 396, 612])
             ->setOption('isRemoteEnabled', false)
             ->setOption('dpi', 72);
 
@@ -78,9 +98,13 @@ class SaleController extends Controller
 
     public function create()
     {
-        $items = Item::orderBy('name')->select('id', 'name', 'price')->get();
-        $promotions = $this->availablePromotions();
-        return view('admin.ventas.create', compact('items', 'promotions'));
+        $items = Item::where('enabled', true)
+            ->orderBy('name')
+            ->select('id', 'name', 'price', 'use_once', 'category_id')
+            ->with('category:id,name')
+            ->get();
+
+        return view('admin.ventas.create', compact('items'));
     }
 
     public function store(Request $request)
@@ -88,57 +112,48 @@ class SaleController extends Controller
         $validator = Validator::make($request->all(), [
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'exists:items,id'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'promotion_id' => ['nullable', 'exists:promotions,id'],
-            'ci' => ['nullable', 'string', 'max:50'],
+            'items.*.quantity' => ['required', 'integer', 'min:0'],
+            'items.*.use_once_number' => ['nullable', 'string', 'max:255'],
+            'payment_method' => ['required', 'in:efectivo,qr'],
+            'paid_amount' => ['required', 'numeric', 'min:0'],
+            'glosa' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $data = $validator->validate();
-        $promotions = $this->availablePromotions();
-        $promotion = $this->resolvePromotion($data['promotion_id'] ?? null, $promotions);
-        if (($data['promotion_id'] ?? null) && !$promotion) {
-            throw ValidationException::withMessages([
-                'promotion_id' => 'La promoción seleccionada no se encuentra disponible.',
-            ]);
-        }
 
-        $ci = $data['ci'] ?? null;
-        if ($promotion && $promotion->single_use) {
-            if (empty($ci)) {
-                throw ValidationException::withMessages([
-                    'ci' => 'Debes registrar el número de cédula para promociones de uso único.',
-                ]);
-            }
-            $this->ensurePromotionUsageIsUnique($promotion, $ci);
-        }
-
+        $this->ensureUseOnceNumbers($data['items']);
+        $this->ensureUniqueUseOnceCodes($data['items']);
+        $this->ensureItemsEnabled($data['items']);
         $preparedItems = $this->prepareItems($data['items']);
 
         if ($preparedItems->isEmpty()) {
             throw ValidationException::withMessages([
-                'items' => 'Debe seleccionar al menos un ítem.',
+                'items' => 'Debe seleccionar al menos un ítem con cantidad mayor a cero.',
             ]);
         }
 
-        $discountType = $promotion ? $promotion->discount_type : 'fixed';
-        $discountValue = $promotion ? (float) $promotion->discount_value : 0;
         $saleDate = now();
         $invoiceNumber = Sale::whereDate('sale_date', $saleDate)->max('invoice_number') ?? 0;
         $invoiceNumber++;
 
-        $totals = $this->calculateTotals($preparedItems, $discountType, $discountValue);
+        $totals = $this->calculateTotals($preparedItems, 'fixed', 0);
+        $paidAmount = round((float) $data['paid_amount'], 2);
 
-        $sale = DB::transaction(function () use ($preparedItems, $totals, $promotion, $ci, $discountType, $discountValue, $saleDate, $invoiceNumber) {
+        $sale = DB::transaction(function () use ($preparedItems, $totals, $saleDate, $invoiceNumber, $data, $paidAmount) {
             $sale = Sale::create([
                 'sale_date' => $saleDate,
                 'invoice_number' => $invoiceNumber,
-                'status' => 'active',
+                'status' => Sale::STATUS_ACTIVE,
                 'subtotal' => $totals['subtotal'],
-                'discount_type' => $discountType,
-                'discount_value' => $discountValue,
-                'promotion_id' => $promotion?->id,
-                'customer_ci' => $ci,
+                'discount_type' => 'fixed',
+                'discount_value' => 0,
+                'payment_method' => $data['payment_method'],
+                'paid_amount' => $paidAmount,
+                'balance_due' => 0,
                 'total' => $totals['total'],
+                'customer_code' => $this->extractCustomerCode($preparedItems),
+                'user_id' => Auth::id(),
+                'glosa' => $data['glosa'] ?? null,
             ]);
 
             foreach ($preparedItems as $row) {
@@ -147,8 +162,6 @@ class SaleController extends Controller
 
             return $sale;
         });
-
-        $this->syncPromotionUsage($sale, $promotion, $ci);
 
         if ($request->ajax()) {
             return response()->json([
@@ -165,9 +178,21 @@ class SaleController extends Controller
 
     public function edit(Sale $venta)
     {
-        $items = Item::orderBy('name')->select('id', 'name', 'price')->get();
-        $promotions = $this->availablePromotions();
-        return view('admin.ventas.edit', compact('venta', 'items', 'promotions'));
+        $venta->loadMissing('saleItems');
+        $itemIds = $venta->saleItems->pluck('item_id')->filter()->unique()->values();
+
+        $itemsQuery = Item::orderBy('name')
+            ->select('id', 'name', 'price', 'use_once', 'category_id')
+            ->with('category:id,name');
+        $itemsQuery->where(function ($query) use ($itemIds) {
+            $query->where('enabled', true);
+            if ($itemIds->isNotEmpty()) {
+                $query->orWhereIn('items.id', $itemIds->toArray());
+            }
+        });
+
+        $items = $itemsQuery->get();
+        return view('admin.ventas.edit', compact('venta', 'items'));
     }
 
     public function update(Request $request, Sale $venta)
@@ -175,51 +200,42 @@ class SaleController extends Controller
         $validator = Validator::make($request->all(), [
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'exists:items,id'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'promotion_id' => ['nullable', 'exists:promotions,id'],
-            'ci' => ['nullable', 'string', 'max:50'],
+            'items.*.quantity' => ['required', 'integer', 'min:0'],
+            'items.*.use_once_number' => ['nullable', 'string', 'max:255'],
+            'payment_method' => ['required', 'in:efectivo,qr'],
+            'paid_amount' => ['required', 'numeric', 'min:0'],
+            'glosa' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $data = $validator->validate();
-        $promotions = $this->availablePromotions();
-        $promotion = $this->resolvePromotion($data['promotion_id'] ?? null, $promotions);
-        if (($data['promotion_id'] ?? null) && !$promotion) {
-            throw ValidationException::withMessages([
-                'promotion_id' => 'La promoción seleccionada no se encuentra disponible.',
-            ]);
-        }
 
-        $ci = $data['ci'] ?? null;
-        if ($promotion && $promotion->single_use) {
-            if (empty($ci)) {
-                throw ValidationException::withMessages([
-                    'ci' => 'Debes registrar el número de cédula para promociones de uso único.',
-                ]);
-            }
-            $this->ensurePromotionUsageIsUnique($promotion, $ci, $venta);
-        }
-
+        $this->ensureUseOnceNumbers($data['items']);
+        $this->ensureUniqueUseOnceCodes($data['items'], $venta);
+        $venta->loadMissing('saleItems');
+        $this->ensureItemsEnabled($data['items']);
         $preparedItems = $this->prepareItems($data['items']);
 
         if ($preparedItems->isEmpty()) {
             throw ValidationException::withMessages([
-                'items' => 'Debe seleccionar al menos un ítem.',
+                'items' => 'Debe seleccionar al menos un ítem con cantidad mayor a cero.',
             ]);
         }
 
-        $discountType = $promotion ? $promotion->discount_type : 'fixed';
-        $discountValue = $promotion ? (float) $promotion->discount_value : 0;
+        $totals = $this->calculateTotals($preparedItems, 'fixed', 0);
+        $paidAmount = round((float) $data['paid_amount'], 2);
 
-        $totals = $this->calculateTotals($preparedItems, $discountType, $discountValue);
-
-        DB::transaction(function () use ($venta, $preparedItems, $totals, $promotion, $ci, $discountType, $discountValue) {
+        DB::transaction(function () use ($venta, $preparedItems, $totals, $data, $paidAmount) {
             $venta->update([
                 'subtotal' => $totals['subtotal'],
-                'discount_type' => $discountType,
-                'discount_value' => $discountValue,
-                'promotion_id' => $promotion?->id,
-                'customer_ci' => $ci,
+                'discount_type' => 'fixed',
+                'discount_value' => 0,
+                'payment_method' => $data['payment_method'],
+                'paid_amount' => $paidAmount,
+                'balance_due' => 0,
                 'total' => $totals['total'],
+                'customer_code' => $this->extractCustomerCode($preparedItems),
+                'user_id' => Auth::id(),
+                'glosa' => $data['glosa'] ?? null,
             ]);
 
             $venta->saleItems()->delete();
@@ -228,8 +244,6 @@ class SaleController extends Controller
                 $venta->saleItems()->create($row);
             }
         });
-
-        $this->syncPromotionUsage($venta, $promotion, $ci);
 
         if ($request->ajax()) {
             return response()->json([
@@ -245,8 +259,7 @@ class SaleController extends Controller
 
     public function destroy(Request $request, Sale $venta)
     {
-        $venta->update(['status' => 'annulled']);
-        PromotionUsage::where('sale_id', $venta->id)->delete();
+        $venta->update(['status' => Sale::STATUS_ANNULLED]);
 
         $response = ['message' => 'Venta eliminada correctamente.'];
 
@@ -261,24 +274,129 @@ class SaleController extends Controller
 
     private function prepareItems(array $items)
     {
-        $collection = collect($items);
-
-        return $collection->map(function ($row) {
+        return collect($items)->map(function ($row) {
             $item = Item::find($row['item_id']);
             if (!$item) {
                 return null;
             }
 
-            $quantity = max(1, (int) $row['quantity']);
+            $quantity = max(0, (int) $row['quantity']);
+            if ($quantity < 1) {
+                return null;
+            }
+
             $unitPrice = $item->price;
+
+            $useOnceNumber = isset($row['use_once_number']) ? trim($row['use_once_number']) : null;
 
             return [
                 'item_id' => $item->id,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'total' => round($unitPrice * $quantity, 2),
+                'use_once_number' => $useOnceNumber,
             ];
         })->filter();
+    }
+
+    private function extractCustomerCode($items): ?string
+    {
+        return collect($items)
+            ->pluck('use_once_number')
+            ->filter()
+            ->first();
+    }
+
+    private function ensureUniqueUseOnceCodes(array $items, ?Sale $venta = null): void
+    {
+        $codes = [];
+
+        foreach ($items as $index => $row) {
+            $item = Item::find($row['item_id']);
+            if (!$item) {
+                continue;
+            }
+
+            $quantity = max(0, (int) ($row['quantity'] ?? 0));
+            if ($quantity < 1) {
+                continue;
+            }
+
+            $code = trim($row['use_once_number'] ?? '');
+            if ($code === '') {
+                continue;
+            }
+
+            if (in_array($code, $codes, true)) {
+                throw ValidationException::withMessages([
+                    'items.' . $index . '.use_once_number' => 'Este código ya se está utilizando en la venta actual.',
+                ]);
+            }
+
+            $codes[] = $code;
+
+            $query = SaleItem::where('item_id', $item->id)
+                ->where('use_once_number', $code)
+                ->whereHas('sale', function ($query) {
+                    $query->where('status', Sale::STATUS_ACTIVE);
+                });
+
+            if ($venta) {
+                $query->where('sale_id', '<>', $venta->id);
+            }
+
+            if ($query->exists()) {
+                throw ValidationException::withMessages([
+                    'items.' . $index . '.use_once_number' => 'Ya se usó ese número en otra venta activa.',
+                ]);
+            }
+        }
+    }
+
+    private function ensureItemsEnabled(array $items): void
+    {
+        $requestedIds = collect($items)
+            ->filter(function ($row) {
+                return isset($row['quantity']) && (int) $row['quantity'] > 0;
+            })
+            ->pluck('item_id')
+            ->filter()
+            ->unique();
+
+        if ($requestedIds->isEmpty()) {
+            return;
+        }
+
+        $invalidItems = Item::whereIn('id', $requestedIds)
+            ->where('enabled', false)
+            ->exists();
+
+        if ($invalidItems) {
+            throw ValidationException::withMessages([
+                'items' => 'Solo se pueden seleccionar ítems habilitados.',
+            ]);
+        }
+
+    }
+
+    private function ensureUseOnceNumbers(array $items): void
+    {
+        foreach ($items as $index => $row) {
+            $item = Item::find($row['item_id']);
+            if (!$item) {
+                continue;
+            }
+
+            $quantity = max(0, (int) ($row['quantity'] ?? 0));
+            if (!$item->use_once) {
+                continue;
+            }
+            if ($quantity > 0 && empty(trim($row['use_once_number'] ?? ''))) {
+                throw ValidationException::withMessages([
+                    'items.' . $index . '.use_once_number' => 'El número único es obligatorio para los ítems de uso único.',
+                ]);
+            }
+        }
     }
 
     private function calculateTotals($items, string $discountType, float $discountValue): array
@@ -300,57 +418,4 @@ class SaleController extends Controller
         ];
     }
 
-    private function availablePromotions()
-    {
-        $today = now();
-        return Promotion::whereDate('start_date', '<=', $today)
-            ->whereDate('end_date', '>=', $today)
-            ->orderBy('name')
-            ->get();
-    }
-
-    private function resolvePromotion(?int $promotionId, $promotions)
-    {
-        if (!$promotionId) {
-            return null;
-        }
-
-        return $promotions->firstWhere('id', $promotionId);
-    }
-
-    private function ensurePromotionUsageIsUnique(Promotion $promotion, string $ci, ?Sale $sale = null): void
-    {
-        $query = PromotionUsage::where('promotion_id', $promotion->id)
-            ->where('ci', $ci);
-
-        if ($sale) {
-            $query->where('sale_id', '<>', $sale->id);
-        }
-
-        if ($query->exists()) {
-            throw ValidationException::withMessages([
-                'ci' => 'Esta cédula ya usó la promoción seleccionada.',
-            ]);
-        }
-    }
-
-    private function syncPromotionUsage(Sale $sale, ?Promotion $promotion, ?string $ci): void
-    {
-        if ($promotion && $promotion->single_use) {
-            if (empty($ci)) {
-                return;
-            }
-
-            PromotionUsage::updateOrCreate(
-                ['sale_id' => $sale->id],
-                [
-                    'promotion_id' => $promotion->id,
-                    'ci' => $ci,
-                    'used_at' => now(),
-                ]
-            );
-        } else {
-            PromotionUsage::where('sale_id', $sale->id)->delete();
-        }
-    }
 }

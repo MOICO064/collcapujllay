@@ -96,22 +96,6 @@
 
             <span data-sidebar-label class="transition-all duration-200">Items</span>
         </a>
-        <!-- Promociones -->
-        <a href="{{ route('promociones.index') }}" title="Promociones" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
-{{ request()->routeIs('promociones.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
-
-            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-[0_6px_20px_rgba(17,101,84,0.15)] transition
-    {{ request()->routeIs('promociones.*') ? 'text-emerald-700' : 'text-emerald-600 group-hover:bg-emerald-50' }}">
-
-                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                    <path d="M21 10V5a2 2 0 0 0-2-2h-5L3 12l7 7h5a2 2 0 0 0 2-2v-5z" />
-                    <circle cx="16.5" cy="7.5" r="1.5" />
-                </svg>
-            </span>
-
-            <span data-sidebar-label class="transition-all duration-200">Promociones</span>
-        </a>
-
         <!-- Ventas -->
         <a href="{{ route('ventas.index') }}" title="Ventas" class="group flex items-center gap-3 rounded-2xl px-3 py-3 text-base font-semibold transition
 {{ request()->routeIs('ventas.*') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-900 hover:bg-emerald-50' }}">
@@ -127,7 +111,6 @@
 
             <span data-sidebar-label class="transition-all duration-200">Ventas</span>
         </a>
-
 
         <!-- Reportes -->
         <a href="{{ route('reportes.index') }}" title="Reportes"

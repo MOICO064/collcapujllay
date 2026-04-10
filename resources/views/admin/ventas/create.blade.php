@@ -22,17 +22,9 @@
                     'id' => $item->id,
                     'name' => $item->name,
                     'price' => (float) $item->price,
-                ];
-            });
-
-            $promotionsData = $promotions->map(function ($promotion) {
-                return [
-                    'id' => $promotion->id,
-                    'name' => $promotion->name,
-                    'description' => $promotion->description,
-                    'discount_type' => $promotion->discount_type,
-                    'discount_value' => (float) $promotion->discount_value,
-                    'single_use' => $promotion->single_use,
+                    'use_once' => (bool) $item->use_once,
+                    'category_id' => $item->category_id,
+                    'category_name' => $item->category?->name ?? 'Sin categoría',
                 ];
             });
         @endphp
@@ -41,18 +33,14 @@
             data-url="{{ route('ventas.store') }}"
             data-method="POST"
             data-items='@json($itemsData)'
-            data-sale-items='@json($saleItemsData)'
-            data-promotions='@json($promotionsData)'
-            data-selected-promotion="{{ old('promotion_id', '') }}">
+            data-sale-items='@json($saleItemsData)'>
             @csrf
 
             @php
             $buttonText = 'Guardar venta';
             @endphp
 
-            @include('admin.ventas.form', [
-            'promotions' => $promotions
-            ])
+            @include('admin.ventas.form')
         </form>
 
         @push('scripts')

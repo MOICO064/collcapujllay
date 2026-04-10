@@ -15,7 +15,6 @@ class Category extends Model
         'name',
         'slug',
         'description',
-        'parent_id',
     ];
 
     /**
@@ -25,22 +24,9 @@ class Category extends Model
     {
         return LogOptions::defaults()
             ->useLogName('Category')
-            ->logOnly(['name', 'slug', 'description', 'parent_id'])
+            ->logOnly(['name', 'slug', 'description'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
-    }
-
-    /**
-     * Relación padre-hijo (categorías anidadas)
-     */
-    public function parent()
-    {
-        return $this->belongsTo(self::class, 'parent_id');
-    }
-
-    public function children()
-    {
-        return $this->hasMany(self::class, 'parent_id');
     }
 
     /**

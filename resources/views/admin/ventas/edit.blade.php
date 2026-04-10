@@ -10,7 +10,7 @@
                     Editar venta
                 </h1>
                 <p class="text-sm text-slate-500 mt-1">
-                    Actualiza los ítems registrados y el descuento asociado.
+                    Actualiza los ítems registrados y los totales de la venta.
                 </p>
             </div>
         </div>
@@ -20,6 +20,7 @@
                 return [
                     'item_id' => $line->item_id,
                     'quantity' => $line->quantity,
+                    'use_once_number' => $line->use_once_number,
                 ];
             })->toArray());
 
@@ -28,17 +29,9 @@
                     'id' => $item->id,
                     'name' => $item->name,
                     'price' => (float) $item->price,
-                ];
-            });
-
-            $promotionsData = $promotions->map(function ($promotion) {
-                return [
-                    'id' => $promotion->id,
-                    'name' => $promotion->name,
-                    'description' => $promotion->description,
-                    'discount_type' => $promotion->discount_type,
-                    'discount_value' => (float) $promotion->discount_value,
-                    'single_use' => $promotion->single_use,
+                    'use_once' => (bool) $item->use_once,
+                    'category_id' => $item->category_id,
+                    'category_name' => $item->category?->name ?? 'Sin categoría',
                 ];
             });
         @endphp
@@ -47,9 +40,7 @@
             data-url="{{ route('ventas.update', $venta) }}"
             data-method="PUT"
             data-items='@json($itemsData)'
-            data-sale-items='@json($saleItemsData)'
-            data-promotions='@json($promotionsData)'
-            data-selected-promotion="{{ old('promotion_id', $venta->promotion_id ?? '') }}">
+            data-sale-items='@json($saleItemsData)'>
             @csrf
             @method('PUT')
 
@@ -57,9 +48,7 @@
             $buttonText = 'Actualizar venta';
             @endphp
 
-            @include('admin.ventas.form', [
-            'promotions' => $promotions
-            ])
+            @include('admin.ventas.form')
         </form>
 
         @push('scripts')

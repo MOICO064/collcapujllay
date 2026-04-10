@@ -24,6 +24,8 @@ class ItemController extends Controller
                 'category_id',
                 'price',
                 'description',
+                'enabled',
+                'use_once',
                 'created_at',
             ]);
 
@@ -40,10 +42,16 @@ class ItemController extends Controller
             ->editColumn('created_at', function (Item $item) {
                 return $item->created_at?->format('d/m/Y') ?? '';
             })
+            ->addColumn('estado', function (Item $item) {
+                return view('admin.items.partials.status', compact('item'))->render();
+            })
+            ->addColumn('use_once', function (Item $item) {
+                return $item->use_once ? '<span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">Uso único</span>' : '<span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-500">Normal</span>';
+            })
             ->addColumn('acciones', function (Item $item) {
                 return view('admin.items.partials.actions', compact('item'))->render();
             })
-            ->rawColumns(['acciones'])
+            ->rawColumns(['acciones', 'estado', 'use_once'])
             ->make(true);
     }
 
@@ -60,6 +68,8 @@ class ItemController extends Controller
             'category_id' => ['required', 'exists:categories,id'],
             'price' => ['required', 'numeric', 'min:0'],
             'description' => ['nullable', 'string', 'max:2000'],
+            'enabled' => ['required', 'boolean'],
+            'use_once' => ['required', 'boolean'],
         ]);
 
         $item = Item::create($data);
@@ -89,6 +99,8 @@ class ItemController extends Controller
             'category_id' => ['required', 'exists:categories,id'],
             'price' => ['required', 'numeric', 'min:0'],
             'description' => ['nullable', 'string', 'max:2000'],
+            'enabled' => ['required', 'boolean'],
+            'use_once' => ['required', 'boolean'],
         ]);
 
         $item->update($data);

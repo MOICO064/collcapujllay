@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
-use App\Models\Promotion;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
 class Sale extends Model
 {
     use HasFactory, LogsActivity;
+
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_ANNULLED = 'annulled';
 
     protected $fillable = [
         'sale_date',
@@ -20,8 +23,12 @@ class Sale extends Model
         'discount_type',
         'discount_value',
         'total',
-        'promotion_id',
-        'customer_ci',
+        'payment_method',
+        'paid_amount',
+        'balance_due',
+        'customer_code',
+        'user_id',
+        'glosa',
     ];
 
     protected $casts = [
@@ -31,8 +38,11 @@ class Sale extends Model
         'subtotal' => 'decimal:2',
         'discount_value' => 'decimal:2',
         'total' => 'decimal:2',
-        'promotion_id' => 'int',
-        'customer_ci' => 'string',
+        'payment_method' => 'string',
+        'paid_amount' => 'decimal:2',
+        'balance_due' => 'decimal:2',
+        'user_id' => 'integer',
+        'glosa' => 'string',
     ];
 
     /**
@@ -50,8 +60,10 @@ class Sale extends Model
                 'discount_type',
                 'discount_value',
                 'total',
-                'promotion_id',
-                'customer_ci',
+                'customer_code',
+                'payment_method',
+                'user_id',
+                'glosa',
             ])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
@@ -77,8 +89,9 @@ class Sale extends Model
         return $this->hasMany(SaleItem::class);
     }
 
-    public function promotion()
+    public function user()
     {
-        return $this->belongsTo(Promotion::class);
+        return $this->belongsTo(User::class);
     }
+
 }

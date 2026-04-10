@@ -9,15 +9,9 @@ $(document).ready(function () {
         columns: [
             { data: 'sale_date', title: 'Fecha' },
             { data: 'items_list', title: 'Ítems', orderable: false, searchable: false },
-            { data: 'promotion', title: 'Promoción' },
-            {
-                data: 'subtotal',
-                title: 'Subtotal',
-                render: function (data) {
-                    return 'Bs ' + numberWithDots(parseFloat(data).toFixed(2));
-                }
-            },
-            { data: 'discount_display', title: 'Descuento' },
+            { data: 'payment_method', title: 'Método' },
+            { data: 'user', title: 'Usuario' },
+            { data: 'glosa', title: 'Glosa', orderable: false, searchable: false },
             {
                 data: 'total',
                 title: 'Total',

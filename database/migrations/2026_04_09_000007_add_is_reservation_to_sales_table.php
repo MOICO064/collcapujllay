@@ -6,28 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('sales', function (Blueprint $table) {
-            $table->foreignId('promotion_id')
-                ->nullable()
-                ->constrained('promotions')
-                ->nullOnDelete()
-                ->after('discount_value');
+            $table->boolean('is_reservation')->default(false)->after('balance_due');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('sales', function (Blueprint $table) {
-            $table->dropForeign(['promotion_id']);
-            $table->dropColumn('promotion_id');
+            $table->dropColumn('is_reservation');
         });
     }
 };

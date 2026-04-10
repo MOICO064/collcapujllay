@@ -43,7 +43,6 @@
                 <tr>
                     <th>Nombre</th>
                     <th>Slug</th>
-                    <th>Categoría padre</th>
                     <th>Descripción</th>
                     <th>Creado</th>
                     <th>Acciones</th>

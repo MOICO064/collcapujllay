@@ -16,20 +16,15 @@ class CategoriaController extends Controller
 
     public function data()
     {
-        $query = Category::with('parent')
-            ->select([
-                'id',
-                'name',
-                'slug',
-                'parent_id',
-                'description',
-                'created_at',
-            ]);
+        $query = Category::select([
+            'id',
+            'name',
+            'slug',
+            'description',
+            'created_at',
+        ]);
 
         return DataTables::of($query)
-            ->addColumn('parent', function (Category $category) {
-                return $category->parent?->name ?? 'Sin padre';
-            })
             ->editColumn('description', function (Category $category) {
                 if (empty($category->description)) {
                     return 'Sin descripción';
@@ -48,8 +43,7 @@ class CategoriaController extends Controller
 
     public function create()
     {
-        $categorias = Category::orderBy('name')->get();
-        return view('admin.categorias.create', compact('categorias'));
+        return view('admin.categorias.create');
     }
 
     public function store(Request $request)
@@ -57,7 +51,6 @@ class CategoriaController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255'],
-            'parent_id' => ['nullable', 'exists:categories,id'],
             'description' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -79,11 +72,7 @@ class CategoriaController extends Controller
 
     public function edit(Category $categoria)
     {
-        $categorias = Category::where('id', '<>', $categoria->id)
-            ->orderBy('name')
-            ->get();
-
-        return view('admin.categorias.edit', compact('categoria', 'categorias'));
+        return view('admin.categorias.edit', compact('categoria'));
     }
 
     public function update(Request $request, Category $categoria)
@@ -91,13 +80,8 @@ class CategoriaController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255'],
-            'parent_id' => ['nullable', 'exists:categories,id'],
             'description' => ['nullable', 'string', 'max:2000'],
         ]);
-
-        if (!empty($data['parent_id']) && (int)$data['parent_id'] === $categoria->id) {
-            $data['parent_id'] = null;
-        }
 
         $data['slug'] = $this->buildSlug($data['slug'] ?? null, $data['name'], $categoria->id);
 

@@ -9,7 +9,6 @@
         columns: [
             { data: 'name', title: 'Nombre' },
             { data: 'slug', title: 'Slug' },
-            { data: 'parent', title: 'Categoría padre' },
             { data: 'description', title: 'Descripción' },
             { data: 'created_at', title: 'Creado' },
             {

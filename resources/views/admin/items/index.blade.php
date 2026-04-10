@@ -45,6 +45,8 @@
                     <th>Categoría</th>
                     <th>Precio</th>
                     <th>Descripción</th>
+                    <th>Uso único</th>
+                    <th>Estado</th>
                     <th>Creado</th>
                     <th>Acciones</th>
                 </tr>

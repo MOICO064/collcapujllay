@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Promotion;
-use App\Models\PromotionUsage;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\User;
@@ -13,104 +11,99 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $now = now();
-        $todayDate = $now->toDateString();
-        $monthlyStart = $now->copy()->startOfMonth();
+
+        $today = $now->toDateString();
+        $month = $now->month;
+        $year = $now->year;
+
         $weekStart = $now->copy()->subDays(6)->startOfDay();
         $weekEnd = $now->copy()->endOfDay();
-        $weeklyRange = [$weekStart, $weekEnd];
 
-        $salesTodayCount = Sale::where('status', 'active')
-            ->whereDate('sale_date', $todayDate)
-            ->count();
+        // 🔥 BASE QUERY reutilizable
+        $baseQuery = Sale::where('status', Sale::STATUS_ACTIVE);
 
-        $salesTodayRevenue = Sale::where('status', 'active')
-            ->whereDate('sale_date', $todayDate)
-            ->sum('total');
+        // =========================
+        // 📊 RESUMEN (1 SOLA QUERY)
+        // =========================
+        $summaryData = (clone $baseQuery)
+            ->selectRaw("
+            COUNT(CASE WHEN DATE(sale_date) = ? THEN 1 END) as sales_today_count,
+            SUM(CASE WHEN DATE(sale_date) = ? THEN total ELSE 0 END) as sales_today_revenue,
+            COUNT(*) as monthly_sales_count,
+            SUM(total) as monthly_revenue
+        ", [$today, $today])
+            ->whereMonth('sale_date', $month)
+            ->whereYear('sale_date', $year)
+            ->first();
 
-        $monthlySalesCount = Sale::where('status', 'active')
-            ->whereMonth('sale_date', $monthlyStart->month)
-            ->whereYear('sale_date', $monthlyStart->year)
-            ->count();
-
-        $monthlyRevenue = Sale::where('status', 'active')
-            ->whereMonth('sale_date', $monthlyStart->month)
-            ->whereYear('sale_date', $monthlyStart->year)
-            ->sum('total');
-
-        $averageTicket = $monthlySalesCount > 0 ? $monthlyRevenue / $monthlySalesCount : 0;
+        $averageTicket = $summaryData->monthly_sales_count > 0
+            ? $summaryData->monthly_revenue / $summaryData->monthly_sales_count
+            : 0;
 
         $summary = [
-            'sales_today_count' => $salesTodayCount,
-            'sales_today_revenue' => $salesTodayRevenue,
-            'monthly_revenue' => $monthlyRevenue,
-            'monthly_sales_count' => $monthlySalesCount,
-            'average_ticket' => $averageTicket,
+            'sales_today_count' => (int) $summaryData->sales_today_count,
+            'sales_today_revenue' => (float) $summaryData->sales_today_revenue,
+            'monthly_sales_count' => (int) $summaryData->monthly_sales_count,
+            'monthly_revenue' => (float) $summaryData->monthly_revenue,
+            'average_ticket' => (float) $averageTicket,
         ];
 
-        $trendRaw = Sale::where('status', 'active')
-            ->whereBetween('sale_date', $weeklyRange)
+        // =========================
+        // 📈 TENDENCIA SEMANAL
+        // =========================
+        $trendRaw = (clone $baseQuery)
+            ->whereBetween('sale_date', [$weekStart, $weekEnd])
             ->selectRaw('DATE(sale_date) as date, SUM(total) as total')
             ->groupBy('date')
             ->pluck('total', 'date');
 
-        $salesTrend = collect(range(6, 0))
-            ->map(function ($daysAgo) use ($now, $trendRaw) {
-                $date = $now->copy()->subDays($daysAgo);
-                $key = $date->format('Y-m-d');
+        $salesTrend = collect(range(6, 0))->map(function ($daysAgo) use ($now, $trendRaw) {
+            $date = $now->copy()->subDays($daysAgo);
+            $key = $date->format('Y-m-d');
 
-                return [
-                    'label' => $date->format('d/m'),
-                    'amount' => (float) ($trendRaw[$key] ?? 0),
-                ];
-            });
+            return [
+                'label' => $date->format('d/m'),
+                'amount' => (float) ($trendRaw[$key] ?? 0),
+            ];
+        });
 
-        $topItems = SaleItem::select('items.name as item_name', DB::raw('SUM(sale_items.quantity) as quantity'), DB::raw('SUM(sale_items.total) as revenue'))
+        // =========================
+        // 🏆 TOP ITEMS
+        // =========================
+        $topItems = SaleItem::query()
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->join('items', 'items.id', '=', 'sale_items.item_id')
-            ->where('sales.status', 'active')
+            ->where('sales.status', Sale::STATUS_ACTIVE)
+            ->selectRaw('items.name as item_name, SUM(sale_items.quantity) as quantity, SUM(sale_items.total) as revenue')
             ->groupBy('items.name')
             ->orderByDesc('revenue')
             ->limit(4)
             ->get();
 
-        $recentSales = Sale::with('promotion')
-            ->where('status', 'active')
-            ->orderBy('sale_date', 'desc')
+        // =========================
+        // 🧾 VENTAS RECIENTES
+        // =========================
+        $recentSales = (clone $baseQuery)
+            ->latest('sale_date')
             ->limit(5)
             ->get();
 
-        $promotionUsage = PromotionUsage::with('promotion', 'sale')
-            ->whereHas('sale', fn ($query) => $query->where('status', 'active'))
-            ->latest('used_at')
-            ->limit(4)
-            ->get();
-
-        $activePromotions = Promotion::whereDate('start_date', '<=', $now)
-            ->whereDate('end_date', '>=', $now)
-            ->count();
-
-        $totalPromotionUsage = PromotionUsage::count();
-        $usageRatio = $activePromotions > 0
-            ? round(min(100, ($totalPromotionUsage / max(1, $activePromotions)) * 100), 1)
-            : 0;
-
+        // =========================
+        // 👥 GLOBAL
+        // =========================
         $usersCount = User::count();
-        $totalSales = Sale::where('status', 'active')->count();
+        $totalSales = (clone $baseQuery)->count();
 
         return view('admin.index', compact(
             'summary',
             'salesTrend',
             'topItems',
             'recentSales',
-            'promotionUsage',
-            'activePromotions',
-            'usageRatio',
             'usersCount',
-            'totalSales',
-            'totalPromotionUsage'
+            'totalSales'
         ));
     }
 }

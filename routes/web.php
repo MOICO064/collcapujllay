@@ -7,7 +7,6 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ItemController;
-use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ReportController;
 
@@ -74,17 +73,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{item}/edit', [ItemController::class, 'edit'])->middleware('can:items.editar')->name('edit');
         Route::put('/{item}', [ItemController::class, 'update'])->middleware('can:items.editar')->name('update');
         Route::delete('/{item}', [ItemController::class, 'destroy'])->middleware('can:items.eliminar')->name('destroy');
-    });
-
-    // PROMOCIONES
-    Route::prefix('promociones')->name('promociones.')->group(function () {
-        Route::get('/', [PromotionController::class, 'index'])->middleware('can:promociones.ver')->name('index');
-        Route::get('/data', [PromotionController::class, 'data'])->middleware('can:promociones.ver')->name('data');
-        Route::get('/create', [PromotionController::class, 'create'])->middleware('can:promociones.crear')->name('create');
-        Route::post('/', [PromotionController::class, 'store'])->middleware('can:promociones.crear')->name('store');
-        Route::get('/{promotion}/edit', [PromotionController::class, 'edit'])->middleware('can:promociones.editar')->name('edit');
-        Route::put('/{promotion}', [PromotionController::class, 'update'])->middleware('can:promociones.editar')->name('update');
-        Route::delete('/{promotion}', [PromotionController::class, 'destroy'])->middleware('can:promociones.eliminar')->name('destroy');
     });
 
     // VENTAS

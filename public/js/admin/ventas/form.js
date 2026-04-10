@@ -4,29 +4,18 @@ $(function () {
         return;
     }
 
-    var itemsDataRaw = form.attr('data-items');
-    var existingItemsRaw = form.attr('data-sale-items');
-    var promotionsDataRaw = form.attr('data-promotions');
-    var selectedPromotionId = form.attr('data-selected-promotion') || '';
-    var itemsData = itemsDataRaw ? JSON.parse(itemsDataRaw) : [];
-    var existingItems = existingItemsRaw ? JSON.parse(existingItemsRaw) : [];
-    var promotionsData = promotionsDataRaw ? JSON.parse(promotionsDataRaw) : [];
-    var tbody = $('#venta-items-body');
-    var addButton = $('#add-item-btn');
-    var subtotalDisplay = $('#subtotal-display');
-    var discountDisplay = $('#discount-display');
+    var itemsData = form.attr('data-items') ? JSON.parse(form.attr('data-items')) : [];
+    var existingItems = form.attr('data-sale-items') ? JSON.parse(form.attr('data-sale-items')) : [];
+    var categoriesContainer = $('#venta-items-body');
     var totalDisplay = $('#total-display');
-    var promotionSelect = $('#promotion_id');
-    var promotionDescription = $('#promotion-description');
-    var ciField = $('#ci-field');
-    var ciInput = $('#customer-ci');
-    var rowIndex = 0;
+    var balanceDueDisplay = $('#balance-due-display');
+    var changeDisplay = $('#change-display');
+    var paidAmountInput = $('#paid_amount');
     var formErrors = $('#form-errors');
     var errorList = formErrors.find('ul');
     var submitButton = form.find('button[type="submit"]');
     var originalButtonHtml = submitButton.html();
-
-    ciField.addClass('hidden');
+    var rowIndex = 0;
 
     function numberWithDots(value) {
         return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -37,168 +26,112 @@ $(function () {
         return 'Bs ' + numberWithDots(amount.toFixed(2));
     }
 
-    function buildOptions() {
-        var options = '<option value="">Selecciona un ítem</option>';
-        itemsData.forEach(function (item) {
-            options += '<option value="' + item.id + '">' + item.name + '</option>';
-        });
-        return options;
+    function createCategorySection(category) {
+        var section = $('<div>').addClass('space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-sm');
+
+        var header = $('<div>').addClass('flex items-center justify-between gap-2');
+        $('<div>')
+            .append(
+                $('<p>').addClass('text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500').text('Categoría'),
+                $('<h4>').addClass('text-base font-semibold text-slate-900 truncate').text(category.name)
+            )
+            .appendTo(header);
+        $('<span>').addClass('text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500').text(category.items.length + ' ítems').appendTo(header);
+
+        var grid = $('<div>').addClass('grid gap-2 sm:grid-cols-2 xl:grid-cols-3');
+        section.append(header, grid);
+
+        categoriesContainer.append(section);
+        return grid;
     }
 
-    function createRow(data) {
+    function createItemCard(container, item, quantity, useOnceNumber) {
         var currentIndex = rowIndex++;
-        var quantityValue = data && data.quantity ? data.quantity : 1;
-        var selectValue = data && data.item_id ? data.item_id : '';
+        var quantityValue = quantity != null ? quantity : 0;
+        var basePrice = parseFloat(item.price) || 0;
 
-        var rowHtml = ''
-            + '<tr data-row="' + currentIndex + '">'
-            + '<td class="px-3 py-2">'
-            + '<select name="items[' + currentIndex + '][item_id]" class="item-select w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">'
-            + buildOptions()
-            + '</select>'
-            + '</td>'
-            + '<td class="px-3 py-2">'
-            + '<input type="text" name="items[' + currentIndex + '][unit_price]" class="item-unit-price w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-50" readonly value="0.00">'
-            + '</td>'
-            + '<td class="px-3 py-2">'
-            + '<input type="number" min="1" name="items[' + currentIndex + '][quantity]" class="item-quantity w-20 border border-slate-300 rounded-lg px-3 py-2" value="' + quantityValue + '">'
-            + '</td>'
-            + '<td class="px-3 py-2">'
-            + '<span class="line-total text-slate-800 font-semibold">Bs 0.00</span>'
-            + '</td>'
-            + '<td class="px-3 py-2">'
-            + '<button type="button" class="remove-item text-red-600 font-semibold hover:underline">Eliminar</button>'
-            + '</td>'
-            + '</tr>';
+        var card = $('<div>')
+            .addClass('flex flex-col gap-2 rounded-lg border border-slate-100 bg-white p-3 text-sm shadow-sm item-card sm:flex-row sm:items-center sm:justify-between')
+            .attr('data-base-price', basePrice);
 
-        var row = $(rowHtml);
-        tbody.append(row);
-        attachRowEvents(row);
-        if (selectValue) {
-            row.find('.item-select').val(selectValue).trigger('change');
-        } else {
-            row.find('.item-select').trigger('change');
-        }
-        row.find('.item-quantity').val(quantityValue);
-        updateLineTotal(row);
-    }
+        var description = $('<div>').addClass('flex-1 space-y-1 min-w-0');
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'items[' + currentIndex + '][item_id]',
+            value: item.id
+        }).appendTo(description);
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'items[' + currentIndex + '][unit_price]',
+            value: basePrice.toFixed(2)
+        }).appendTo(description);
+        $('<p>').addClass('text-sm text-slate-500').text('Ítem').appendTo(description);
+        $('<h4>').addClass('text-lg font-semibold text-slate-900').text(item.name).appendTo(description);
+        $('<p>').addClass('text-sm text-slate-500').text(item.category_name || 'Sin categoría').appendTo(description);
+        $('<p>').addClass('text-xs font-semibold text-emerald-600').text('Bs ' + basePrice.toFixed(2)).appendTo(description);
+        $('<span>').addClass('inline-flex items-center gap-1 text-[0.65rem] uppercase tracking-wide text-slate-500').text(item.use_once ? 'Uso único' : 'Regular').appendTo(description);
 
-    function attachRowEvents(row) {
-        row.find('.item-select').on('change', function () {
-            var selectedId = $(this).val();
-            var item = itemsData.find(function (entry) {
-                return entry.id === Number(selectedId);
-            });
-
-            var unitInput = row.find('.item-unit-price');
-            if (item) {
-                unitInput.val(item.price.toFixed(2));
-            } else {
-                unitInput.val('0.00');
-            }
-            updateLineTotal(row);
-        });
-
-        row.find('.item-quantity').on('input change', function () {
-            updateLineTotal(row);
-        });
-
-        row.find('.remove-item').on('click', function () {
-            row.remove();
-            updateSummary();
-        });
-    }
-
-    function updateLineTotal(row) {
-        var quantity = parseInt(row.find('.item-quantity').val()) || 0;
-        var unitPrice = parseFloat(row.find('.item-unit-price').val()) || 0;
-        var lineTotal = quantity * unitPrice;
-        row.find('.line-total').text(formatCurrency(lineTotal));
-        updateSummary();
-    }
-
-    function getPromotionById(promotionId) {
-        if (!promotionId) {
-            return null;
-        }
-        return promotionsData.find(function (entry) {
-            return entry.id === Number(promotionId);
-        });
-    }
-
-    function applyPromotion(promotionId) {
-        var promotion = getPromotionById(promotionId);
-        if (promotion) {
-            promotionDescription.text(promotion.description ?? '');
-
-            if (promotion.single_use) {
-                ciField.removeClass('hidden');
-                ciInput.prop('required', true);
-            } else {
-                ciField.addClass('hidden');
-                ciInput.prop('required', false).val('');
-            }
-        } else {
-            promotionDescription.text('');
-            ciField.addClass('hidden');
-            ciInput.prop('required', false).val('');
+        if (item.use_once) {
+            var codeField = $('<div>').addClass('space-y-1 mt-3');
+            $('<label>').addClass('text-xs font-semibold text-slate-600 uppercase tracking-wide').text('Código único').appendTo(codeField);
+            $('<input>').attr({
+                type: 'text',
+                name: 'items[' + currentIndex + '][use_once_number]',
+                placeholder: 'Código o número',
+                value: useOnceNumber || ''
+            }).addClass('w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500')
+                .appendTo(codeField);
+            description.append(codeField);
         }
 
+        var quantityField = $('<div>').addClass('space-y-1 flex flex-col items-start sm:items-end max-w-[120px]');
+        $('<label>').addClass('text-xs font-semibold text-slate-600 uppercase tracking-wide').text('Cantidad').appendTo(quantityField);
+        $('<input>').attr({
+            type: 'number',
+            min: '0',
+            step: '1',
+            name: 'items[' + currentIndex + '][quantity]',
+            value: quantityValue
+        }).addClass('item-quantity w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500')
+            .appendTo(quantityField);
+
+        var totalField = $('<div>').addClass('text-right space-y-1');
+        $('<p>').addClass('text-xs font-semibold text-slate-600 uppercase tracking-wide').text('Total').appendTo(totalField);
+        $('<p>').addClass('line-total text-2xl font-bold text-slate-900').text('Bs 0.00').appendTo(totalField);
+
+        card.append(description, quantityField, totalField);
+        container.append(card);
+
+        card.find('.item-quantity').on('input change', function () {
+            updateLineTotal(card);
+        });
+        updateLineTotal(card);
+    }
+
+    function updateLineTotal(card) {
+        var quantity = parseInt(card.find('.item-quantity').val()) || 0;
+        var basePrice = parseFloat(card.data('base-price')) || 0;
+        var lineTotal = quantity * basePrice;
+        card.find('.line-total').text(formatCurrency(lineTotal));
         updateSummary();
     }
 
     function updateSummary() {
-        var subtotal = 0;
-        tbody.find('tr').each(function () {
+        var total = 0;
+        $('.item-card').each(function () {
             var quantity = parseInt($(this).find('.item-quantity').val()) || 0;
-            var unitPrice = parseFloat($(this).find('.item-unit-price').val()) || 0;
-            subtotal += quantity * unitPrice;
+            var basePrice = parseFloat($(this).data('base-price')) || 0;
+            total += quantity * basePrice;
         });
 
-        var promotion = getPromotionById(promotionSelect.val());
-        var discountAmount = 0;
-        if (promotion) {
-            var discountValueNum = parseFloat(promotion.discount_value) || 0;
-            if (promotion.discount_type === 'percentage') {
-                var percentage = Math.min(discountValueNum, 100);
-                discountAmount = (percentage / 100) * subtotal;
-            } else {
-                discountAmount = Math.min(discountValueNum, subtotal);
-            }
-        }
+        var paidAmount = parseFloat(paidAmountInput.val()) || 0;
+        var change = Math.max(paidAmount - total, 0);
+        var balanceDue = Math.max(total - paidAmount, 0);
 
-        var total = Math.max(subtotal - discountAmount, 0);
-
-        subtotalDisplay.text(formatCurrency(subtotal));
-        discountDisplay.text(formatCurrency(discountAmount));
         totalDisplay.text(formatCurrency(total));
+        balanceDueDisplay.text(formatCurrency(balanceDue));
+        changeDisplay.text(formatCurrency(change));
     }
-
-    addButton.on('click', function () {
-        createRow();
-    });
-
-    promotionSelect.on('change', function () {
-        applyPromotion($(this).val());
-    });
-
-    if (existingItems.length) {
-        existingItems.forEach(function (item) {
-            createRow({
-                item_id: item.item_id,
-                quantity: item.quantity,
-            });
-        });
-    } else {
-        createRow();
-    }
-
-    formErrors.find('.field-error').text('');
-
-    if (selectedPromotionId) {
-        promotionSelect.val(selectedPromotionId);
-    }
-    applyPromotion(promotionSelect.val());
 
     function clearErrors() {
         formErrors.addClass('hidden');
@@ -216,6 +149,58 @@ $(function () {
             $('#' + field).addClass('border-red-500');
         });
     }
+
+    var existingMap = {};
+    if (existingItems.length) {
+        existingItems.forEach(function (item) {
+            existingMap[item.item_id] = {
+                quantity: item.quantity,
+                use_once_number: item.use_once_number || ''
+            };
+        });
+    }
+
+    var categories = [];
+    var categoryIndex = {};
+
+    categoriesContainer.empty();
+    itemsData.forEach(function (item) {
+        var catId = item.category_id ?? 'sin-categoria';
+        if (!categoryIndex[catId]) {
+            categoryIndex[catId] = {
+                id: catId,
+                name: item.category_name || 'Sin categoría',
+                items: []
+            };
+            categories.push(categoryIndex[catId]);
+        }
+        categoryIndex[catId].items.push(item);
+    });
+
+    categories.sort(function (a, b) {
+        return a.name.localeCompare(b.name);
+    });
+
+    if (!categories.length) {
+        categoriesContainer.html('<p class="text-sm text-slate-500">No hay ítems habilitados en catálogo.</p>');
+    } else {
+        categories.forEach(function (category) {
+            category.items.sort(function (a, b) {
+                return a.name.localeCompare(b.name);
+            });
+            var sectionContainer = createCategorySection(category);
+            category.items.forEach(function (item) {
+                var existing = existingMap[item.id] || {};
+                createItemCard(sectionContainer, item, existing.quantity ?? 0, existing.use_once_number ?? '');
+            });
+        });
+    }
+
+    updateSummary();
+
+    paidAmountInput.on('input change', function () {
+        updateSummary();
+    });
 
     form.on('submit', function (event) {
         event.preventDefault();
@@ -259,11 +244,14 @@ $(function () {
                 });
             },
             error: function (xhr) {
-                console.error('Venta submit error', xhr);
+                console.error('Error al guardar la venta:', xhr.status, xhr.responseJSON ?? xhr.responseText);
+                if (xhr.responseJSON?.message) {
+                    console.error('Detalle del servidor:', xhr.responseJSON.message);
+                }
                 if (xhr.status === 422 && xhr.responseJSON?.errors) {
                     showErrors(xhr.responseJSON.errors);
                 } else {
-                    Swal.fire('Error', 'Ocurrió un error inesperado.', 'error');
+                    Swal.fire('Error', xhr.responseJSON?.message || 'Ocurrió un error inesperado.', 'error');
                 }
             },
             complete: function () {

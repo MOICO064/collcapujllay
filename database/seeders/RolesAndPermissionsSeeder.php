@@ -19,7 +19,6 @@ class RolesAndPermissionsSeeder extends Seeder
             'permisos',
             'categorias',
             'items',
-            'promociones',
             'ventas',
             'reportes',
         ];

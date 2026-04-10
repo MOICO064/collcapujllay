@@ -11,6 +11,13 @@ $(document).ready(function () {
             { data: 'category', title: 'Categoría' },
             { data: 'price', title: 'Precio' },
             { data: 'description', title: 'Descripción' },
+            { data: 'use_once', title: 'Uso único', orderable: false, searchable: false },
+            {
+                data: 'estado',
+                title: 'Estado',
+                orderable: false,
+                searchable: false,
+            },
             { data: 'created_at', title: 'Creado' },
             {
                 data: 'acciones',

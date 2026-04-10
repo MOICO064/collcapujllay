@@ -17,6 +17,7 @@ class SaleItem extends Model
         'quantity',
         'unit_price',
         'total',
+        'use_once_number',
     ];
 
     protected $casts = [
